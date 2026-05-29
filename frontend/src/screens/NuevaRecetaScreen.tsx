@@ -30,7 +30,7 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
   const [cantidad, setCantidad] = useState('');
   const [unidad, setUnidad] = useState('g');
 
-  // Resetear todos los campos al entrar a la pantalla
+  // Resetear campos y cargar datos al entrar a la pantalla
   useFocusEffect(
     useCallback(() => {
       setNombre('');
@@ -41,7 +41,6 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
       setTiempoMin('');
       setPorciones('');
       setIngredientes([]);
-      setListaIngredientes([]);
       setMostrarIngredientes(false);
       setMostrarNuevoIng(false);
       setBuscarIng('');
@@ -52,20 +51,19 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
       setSeleccionado(null);
       setCantidad('');
       setUnidad('g');
+
+      // Cargar categorías e ingredientes
+      (async () => {
+        try {
+          const [cats, ings] = await Promise.all([api.getCategorias(), api.getIngredientes()]);
+          setCategorias(cats);
+          setListaIngredientes(ings);
+        } catch (err) {
+          console.error('Error cargando datos:', err);
+        }
+      })();
     }, [])
   );
-
-  const getNombre = (obj: { es: string; en: string }) => obj[lang] || obj.es;
-
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  async function cargarDatos() {
-    const [cats, ings] = await Promise.all([api.getCategorias(), api.getIngredientes()]);
-    setCategorias(cats);
-    setListaIngredientes(ings);
-  }
 
   function abrirSelectorIngrediente() {
     setBuscarIng('');
