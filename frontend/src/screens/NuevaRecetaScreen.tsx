@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, FlatList, Alert,
 } from 'react-native';
 import { useI18n } from '../i18n';
+import { useFocusEffect } from '@react-navigation/native';
 import * as api from '../services/api';
 import { Categoria, Ingrediente } from '../types';
 
@@ -28,6 +29,31 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
   const [seleccionado, setSeleccionado] = useState<Ingrediente | null>(null);
   const [cantidad, setCantidad] = useState('');
   const [unidad, setUnidad] = useState('g');
+
+  // Resetear todos los campos al entrar a la pantalla
+  useFocusEffect(
+    useCallback(() => {
+      setNombre('');
+      setNombreEn('');
+      setInstrucciones('');
+      setInstruccionesEn('');
+      setCategoriaId('');
+      setTiempoMin('');
+      setPorciones('');
+      setIngredientes([]);
+      setListaIngredientes([]);
+      setMostrarIngredientes(false);
+      setMostrarNuevoIng(false);
+      setBuscarIng('');
+      setNuevoIngNombre('');
+      setNuevoIngNombreEn('');
+      setNuevoIngUnidad('g');
+      setCargando(false);
+      setSeleccionado(null);
+      setCantidad('');
+      setUnidad('g');
+    }, [])
+  );
 
   const getNombre = (obj: { es: string; en: string }) => obj[lang] || obj.es;
 
