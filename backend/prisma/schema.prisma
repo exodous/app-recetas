@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  nombre            String
+  idiomaPreferido   String    @default("es") @map("idioma_preferido")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  recetas           Receta[]
+  ingredientes      Ingrediente[]
+  descargas         DescargaLocal[]
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  id        String   @id @default(cuid())
+  nombre    Json     // { "es": "Legumbres", "en": "Legumes" }
+  slug      String   @unique
+  icono     String   @default("🍽️")
+  orden     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  recetas   Receta[]
+
+  @@map("categorias")
+}
+
+model Ingrediente {
+  id              String   @id @default(cuid())
+  nombre          Json     // { "es": "Tomate", "en": "Tomato" }
+  unidadBase      String   @map("unidad_base") // g, kg, ml, l, ud
+  esSistema       Boolean  @default(false) @map("es_sistema")
+  creadoPor       String?  @map("creado_por")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  creador         Usuario? @relation(fields: [creadoPor], references: [id])
+  recetas         RecetaIngrediente[]
+
+  @@map("ingredientes")
+}
+
+model Receta {
+  id              String   @id @default(cuid())
+  nombre          Json     // { "es": "Paella", "en": "Paella" }
+  instrucciones   Json     // { "es": "Paso 1...", "en": "Step 1..." }
+  categoriaId      String   @map("categoria_id")
+  usuarioId        String   @map("usuario_id")
+  tiempoMin       Int?     @map("tiempo_min")
+  porciones        Int?
+  fotoUrl         String?  @map("foto_url")
+  publica         Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  categoria       Categoria @relation(fields: [categoriaId], references: [id])
+  usuario         Usuario   @relation(fields: [usuarioId], references: [id])
+  ingredientes    RecetaIngrediente[]
+  descargas       DescargaLocal[]
+
+  @@map("recetas")
+}
+
+model RecetaIngrediente {
+  recetaId        String   @map("receta_id")
+  ingredienteId   String   @map("ingrediente_id")
+  cantidad        Float
+  unidad          String   // g, kg, ml, l, ud
+
+  receta          Receta       @relation(fields: [recetaId], references: [id])
+  ingrediente     Ingrediente  @relation(fields: [ingredienteId], references: [id])
+
+  @@id([recetaId, ingredienteId])
+  @@map("receta_ingredientes")
+}
+
+model DescargaLocal {
+  id              String   @id @default(cuid())
+  usuarioId       String   @map("usuario_id")
+  recetaId        String   @map("receta_id")
+  descargadaEn    DateTime @default(now()) @map("descargada_en")
+
+  usuario         Usuario  @relation(fields: [usuarioId], references: [id])
+  receta          Receta   @relation(fields: [recetaId], references: [id])
+
+  @@unique([usuarioId, recetaId])
+  @@map("descargas_locales")
+}
