@@ -14,11 +14,39 @@ export interface Categoria {
   orden: number;
 }
 
+export interface TipoIngrediente {
+  id: string;
+  nombre: { es: string; en: string };
+  slug: string;
+  icono: string;
+  orden: number;
+}
+
+export interface PrecioIngrediente {
+  id: string;
+  ingredienteId: string;
+  supermercado: string;
+  precio: number;
+  unidad: string;
+  fechaActualizacion: string;
+  urlProducto?: string;
+}
+
 export interface Ingrediente {
   id: string;
   nombre: { es: string; en: string };
   unidadBase: string;
+  tipoId?: string;
+  tipo?: TipoIngrediente;
   esSistema: boolean;
+  // Valor nutricional por 100g/100ml
+  calorias?: number;
+  proteinas?: number;
+  hidratos?: number;
+  grasas?: number;
+  fibra?: number;
+  // Precios
+  precios?: PrecioIngrediente[];
 }
 
 export interface RecetaIngrediente {

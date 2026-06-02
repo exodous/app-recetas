@@ -79,7 +79,16 @@ export async function crearCategoria(categoria: any) {
   return data;
 }
 
-// ============ INGREDIENTES ============
+// ============ TIPOS DE INGREDIENTE ============
+export async function getTiposIngrediente() {
+  const { data } = await api.get('/tipos-ingrediente');
+  return data;
+}
+
+export async function crearTipoIngrediente(tipo: any) {
+  const { data } = await api.post('/tipos-ingrediente', tipo);
+  return data;
+}
 export async function getIngredientes(buscar?: string) {
   const { data } = await api.get('/ingredientes', { params: { buscar } });
   return data;

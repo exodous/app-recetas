@@ -10,6 +10,7 @@ import { authRouter } from './routes/auth';
 import { recetasRouter } from './routes/recetas';
 import { categoriasRouter } from './routes/categorias';
 import { ingredientesRouter } from './routes/ingredientes';
+import { tiposIngredienteRouter } from './routes/tiposIngrediente';
 import { descargasRouter } from './routes/descargas';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -26,6 +27,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/recetas', recetasRouter);
 app.use('/api/categorias', categoriasRouter);
 app.use('/api/ingredientes', ingredientesRouter);
+app.use('/api/tipos-ingrediente', tiposIngredienteRouter);
 app.use('/api/descargas', descargasRouter);
 
 // Manejo de errores

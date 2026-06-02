@@ -25,7 +25,7 @@ model Usuario {
 
 model Categoria {
   id        String   @id @default(cuid())
-  nombre    Json     // { "es": "Legumbres", "en": "Legumes" }
+  nombre    Json
   slug      String   @unique
   icono     String   @default("🍽️")
   orden     Int      @default(0)
@@ -36,28 +36,69 @@ model Categoria {
   @@map("categorias")
 }
 
+// ===== TIPO DE INGREDIENTE (grupo/naturaleza del ingrediente) =====
+model TipoIngrediente {
+  id        String   @id @default(cuid())
+  nombre    Json     // { "es": "Legumbres", "en": "Legumes" }
+  slug      String   @unique
+  icono     String   @default("🧂")
+  orden     Int      @default(0)
+
+  ingredientes Ingrediente[]
+
+  @@map("tipo_ingredientes")
+}
+
+// ===== INGREDIENTE AMPLIADO =====
 model Ingrediente {
   id              String   @id @default(cuid())
-  nombre          Json     // { "es": "Tomate", "en": "Tomato" }
-  unidadBase      String   @map("unidad_base") // g, kg, ml, l, ud
+  nombre          Json
+  unidadBase      String   @map("unidad_base")
+  tipoId          String?  @map("tipo_id")
   esSistema       Boolean  @default(false) @map("es_sistema")
   creadoPor       String?  @map("creado_por")
   createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  creador         Usuario? @relation(fields: [creadoPor], references: [id])
+  // Valor nutricional por 100g o 100ml
+  calorias        Float?   @map("calorias")
+  proteinas       Float?   @map("proteinas")
+  hidratos        Float?   @map("hidratos")
+  grasas          Float?   @map("grasas")
+  fibra           Float?   @map("fibra")
+
+  tipo            TipoIngrediente? @relation(fields: [tipoId], references: [id])
+  creador         Usuario?         @relation(fields: [creadoPor], references: [id])
   recetas         RecetaIngrediente[]
+  precios         PrecioIngrediente[]
 
   @@map("ingredientes")
 }
 
+// ===== PRECIO DEL INGREDIENTE EN SUPERMERCADO =====
+model PrecioIngrediente {
+  id                String   @id @default(cuid())
+  ingredienteId     String   @map("ingrediente_id")
+  supermercado      String   // "mercadona", "carrefour", "dia", "lidl", "aldi"
+  precio            Float
+  unidad            String   // "kg", "l", "ud", "100g", "docena"
+  fechaActualizacion DateTime @default(now()) @map("fecha_actualizacion")
+  urlProducto       String?  @map("url_producto")
+
+  ingrediente       Ingrediente @relation(fields: [ingredienteId], references: [id])
+
+  @@unique([ingredienteId, supermercado, unidad])
+  @@map("precio_ingredientes")
+}
+
 model Receta {
   id              String   @id @default(cuid())
-  nombre          Json     // { "es": "Paella", "en": "Paella" }
-  instrucciones   Json     // { "es": "Paso 1...", "en": "Step 1..." }
-  categoriaId      String   @map("categoria_id")
-  usuarioId        String   @map("usuario_id")
+  nombre          Json
+  instrucciones   Json
+  categoriaId     String   @map("categoria_id")
+  usuarioId       String   @map("usuario_id")
   tiempoMin       Int?     @map("tiempo_min")
-  porciones        Int?
+  porciones       Int?
   fotoUrl         String?  @map("foto_url")
   publica         Boolean  @default(false)
   createdAt       DateTime @default(now()) @map("created_at")
@@ -75,7 +116,7 @@ model RecetaIngrediente {
   recetaId        String   @map("receta_id")
   ingredienteId   String   @map("ingrediente_id")
   cantidad        Float
-  unidad          String   // g, kg, ml, l, ud
+  unidad          String
 
   receta          Receta       @relation(fields: [recetaId], references: [id])
   ingrediente     Ingrediente  @relation(fields: [ingredienteId], references: [id])
