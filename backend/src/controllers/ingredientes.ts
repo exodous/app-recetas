@@ -16,8 +16,10 @@ export async function listar(req: AuthRequest, res: Response, next: NextFunction
     };
 
     if (buscar) {
-      // Búsqueda simple por nombre (JSON) — en producción usar full-text search
-      const todos = await prisma.ingrediente.findMany({ where });
+      const todos = await prisma.ingrediente.findMany({
+        where,
+        include: { precios: true, tipo: true },
+      });
       const filtrados = todos.filter((ing) => {
         const nombreEs = (ing.nombre as any)?.es?.toLowerCase() || '';
         const nombreEn = (ing.nombre as any)?.en?.toLowerCase() || '';
@@ -29,6 +31,7 @@ export async function listar(req: AuthRequest, res: Response, next: NextFunction
 
     const ingredientes = await prisma.ingrediente.findMany({
       where,
+      include: { precios: true, tipo: true },
       orderBy: { nombre: 'asc' },
     });
 
@@ -40,7 +43,7 @@ export async function listar(req: AuthRequest, res: Response, next: NextFunction
 
 export async function crear(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { nombre, unidadBase } = req.body;
+    const { nombre, unidadBase, tipoId, calorias, proteinas, hidratos, grasas, fibra, precios } = req.body;
 
     if (!nombre || !unidadBase) {
       throw new AppError('Nombre y unidad base son obligatorios', 400);
@@ -55,8 +58,22 @@ export async function crear(req: AuthRequest, res: Response, next: NextFunction)
       data: {
         nombre,
         unidadBase,
+        tipoId: tipoId || null,
+        calorias: calorias != null ? calorias : null,
+        proteinas: proteinas != null ? proteinas : null,
+        hidratos: hidratos != null ? hidratos : null,
+        grasas: grasas != null ? grasas : null,
+        fibra: fibra != null ? fibra : null,
         creadoPor: req.usuarioId,
+        precios: precios?.length ? {
+          create: precios.map((p: any) => ({
+            supermercado: p.supermercado,
+            precio: p.precio,
+            unidad: p.unidad,
+          })),
+        } : undefined,
       },
+      include: { precios: true, tipo: true },
     });
 
     res.status(201).json(ingrediente);
@@ -73,6 +90,7 @@ export async function obtener(req: AuthRequest, res: Response, next: NextFunctio
         id,
         OR: [{ esSistema: true }, { creadoPor: req.usuarioId }],
       },
+      include: { precios: true, tipo: true },
     });
     if (!ingrediente) throw new AppError('Ingrediente no encontrado', 404);
     res.json(ingrediente);
@@ -84,7 +102,7 @@ export async function obtener(req: AuthRequest, res: Response, next: NextFunctio
 export async function actualizar(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const { nombre, unidadBase } = req.body;
+    const { nombre, unidadBase, tipoId, calorias, proteinas, hidratos, grasas, fibra, precios } = req.body;
 
     const existente = await prisma.ingrediente.findFirst({
       where: { id, creadoPor: req.usuarioId, esSistema: false },
@@ -96,7 +114,14 @@ export async function actualizar(req: AuthRequest, res: Response, next: NextFunc
       data: {
         ...(nombre && { nombre }),
         ...(unidadBase && { unidadBase }),
+        ...(tipoId !== undefined && { tipoId }),
+        ...(calorias !== undefined && { calorias }),
+        ...(proteinas !== undefined && { proteinas }),
+        ...(hidratos !== undefined && { hidratos }),
+        ...(grasas !== undefined && { grasas }),
+        ...(fibra !== undefined && { fibra }),
       },
+      include: { precios: true, tipo: true },
     });
 
     res.json(ingrediente);
@@ -114,6 +139,7 @@ export async function eliminar(req: AuthRequest, res: Response, next: NextFuncti
     });
     if (!existente) throw new AppError('Ingrediente no encontrado o no editable', 404);
 
+    await prisma.precioIngrediente.deleteMany({ where: { ingredienteId: id } });
     await prisma.ingrediente.delete({ where: { id } });
     res.json({ mensaje: 'Ingrediente eliminado' });
   } catch (err) {

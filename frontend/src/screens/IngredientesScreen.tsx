@@ -7,11 +7,12 @@ import * as api from '../services/api';
 import { Ingrediente, TipoIngrediente } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 
+const SUPERMERCADOS_PRINCIPALES = ['mercadona', 'lidl'];
 const SUPERMERCADOS = [
   { value: 'mercadona', label: 'Mercadona' },
+  { value: 'lidl', label: 'Lidl' },
   { value: 'carrefour', label: 'Carrefour' },
   { value: 'dia', label: 'DIA' },
-  { value: 'lidl', label: 'Lidl' },
   { value: 'aldi', label: 'Aldi' },
 ];
 
@@ -107,12 +108,19 @@ export default function IngredientesScreen() {
     }
   }
 
+  function preciosPrincipales(ing: Ingrediente) {
+    if (!ing.precios) return [];
+    return ing.precios.filter(p => SUPERMERCADOS_PRINCIPALES.includes(p.supermercado));
+  }
+
+  function preciosSecundarios(ing: Ingrediente) {
+    if (!ing.precios) return [];
+    return ing.precios.filter(p => !SUPERMERCADOS_PRINCIPALES.includes(p.supermercado));
+  }
+
   function mejorPrecio(ing: Ingrediente) {
     if (!ing.precios || ing.precios.length === 0) return null;
-    const sorted = [...ing.precios].sort((a, b) => {
-      // Normalizar a precio por kg/l/ud para comparar
-      return a.precio - b.precio;
-    });
+    const sorted = [...ing.precios].sort((a, b) => a.precio - b.precio);
     return sorted[0];
   }
 
@@ -162,24 +170,47 @@ export default function IngredientesScreen() {
               </View>
             )}
 
-            {/* Precios */}
-            {item.precios && item.precios.length > 0 && (
-              <View style={styles.seccion}>
-                <Text style={styles.seccionTitulo}>🛒 Precios en supermercados</Text>
-                {item.precios
-                  .sort((a, b) => a.precio - b.precio)
-                  .map((p, i) => (
+            {/* Precios principales: Lidl y Mercadona */}
+            {(() => {
+              const pp = preciosPrincipales(item);
+              const ps = preciosSecundarios(item);
+              if (pp.length === 0 && ps.length === 0) return null;
+              // Ordenar: primero mercadona, luego lidl
+              const orden = ['mercadona', 'lidl'];
+              pp.sort((a, b) => orden.indexOf(a.supermercado) - orden.indexOf(b.supermercado));
+              return (
+                <View style={styles.seccion}>
+                  <Text style={styles.seccionTitulo}>🛒 Precios</Text>
+                  {pp.map((p, i) => (
                     <View key={i} style={styles.precioRow}>
                       <Text style={styles.precioNombre}>
-                        {p.supermercado.charAt(0).toUpperCase() + p.supermercado.slice(1)}
+                        {p.supermercado === 'mercadona' ? '🏪 Mercadona' : '🔵 Lidl'}
                       </Text>
-                      <Text style={[styles.precioValor, i === 0 && styles.precioMejor]}>
+                      <Text style={styles.precioValor}>
                         {p.precio.toFixed(2)} €/{p.unidad}
                       </Text>
                     </View>
                   ))}
-              </View>
-            )}
+                  {ps.length > 0 && (
+                    <View>
+                      <Text style={styles.precioOtros}>
+                        + {ps.length} supermercado{ps.length > 1 ? 's' : ''} más
+                      </Text>
+                      {ps.sort((a, b) => a.precio - b.precio).map((p, i) => (
+                        <View key={`s${i}`} style={styles.precioRowSec}>
+                          <Text style={styles.precioNombreSec}>
+                            {p.supermercado.charAt(0).toUpperCase() + p.supermercado.slice(1)}
+                          </Text>
+                          <Text style={styles.precioValorSec}>
+                            {p.precio.toFixed(2)} €/{p.unidad}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
           </View>
         )}
       </View>
@@ -369,8 +400,12 @@ const styles = StyleSheet.create({
   filaValor: { width: 60, textAlign: 'right', fontSize: 13, fontWeight: '500', color: '#333' },
   precioRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
   precioNombre: { fontSize: 14, color: '#333', textTransform: 'capitalize' },
-  precioValor: { fontSize: 14, fontWeight: '500', color: '#666' },
+  precioValor: { fontSize: 14, fontWeight: '500', color: '#FF6B35' },
   precioMejor: { color: '#FF6B35', fontWeight: 'bold' },
+  precioOtros: { fontSize: 12, color: '#999', marginTop: 8, marginBottom: 4, fontStyle: 'italic' },
+  precioRowSec: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingLeft: 12 },
+  precioNombreSec: { fontSize: 13, color: '#888', textTransform: 'capitalize' },
+  precioValorSec: { fontSize: 13, color: '#888' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
   emptyTexto: { fontSize: 16, color: '#999' },
   fab: { position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#FF6B35', justifyContent: 'center', alignItems: 'center', elevation: 6 },
