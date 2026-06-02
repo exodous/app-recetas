@@ -10,6 +10,7 @@ import HomeScreen from '../screens/HomeScreen';
 import DetalleRecetaScreen from '../screens/DetalleRecetaScreen';
 import NuevaRecetaScreen from '../screens/NuevaRecetaScreen';
 import IngredientesScreen from '../screens/IngredientesScreen';
+import MenuSemanalScreen from '../screens/MenuSemanalScreen';
 import DescargasScreen from '../screens/DescargasScreen';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
@@ -52,6 +53,14 @@ function Tabs() {
         options={{
           title: t.tabs.ingredientes,
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 22 }}>🧂</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="MenuSemanal"
+        component={MenuSemanalScreen}
+        options={{
+          title: t.tabs.menu || 'Menú',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22 }}>📅</Text>,
         }}
       />
       <Tab.Screen

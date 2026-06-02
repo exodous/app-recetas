@@ -115,4 +115,15 @@ export async function eliminarDescarga(recetaId: string) {
   return data;
 }
 
+// ============ MENU SEMANAL ============
+export async function generarMenuSemanal(dias: any[], comensales: number) {
+  const { data } = await api.post('/menu-semanal/generar', { dias, comensales });
+  return data;
+}
+
+export async function generarListaCompra(menu: any[], supermercado: string = 'todos') {
+  const { data } = await api.post('/menu-semanal/lista-compra', { menu, supermercado });
+  return data;
+}
+
 export default api;

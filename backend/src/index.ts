@@ -12,6 +12,7 @@ import { categoriasRouter } from './routes/categorias';
 import { ingredientesRouter } from './routes/ingredientes';
 import { tiposIngredienteRouter } from './routes/tiposIngrediente';
 import { descargasRouter } from './routes/descargas';
+import { menuSemanalRouter } from './routes/menuSemanal';
 import { errorHandler } from './middleware/errorHandler';
 
 export const prisma = new PrismaClient();
@@ -29,6 +30,7 @@ app.use('/api/categorias', categoriasRouter);
 app.use('/api/ingredientes', ingredientesRouter);
 app.use('/api/tipos-ingrediente', tiposIngredienteRouter);
 app.use('/api/descargas', descargasRouter);
+app.use('/api/menu-semanal', menuSemanalRouter);
 
 // Manejo de errores
 app.use(errorHandler);
