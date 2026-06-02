@@ -6,9 +6,9 @@ import { AuthRequest } from '../middleware/auth';
 // Generar menú semanal aleatorio
 export async function generarMenu(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { dias, comensales } = req.body;
-    // dias: [{ dia: 'lunes', almuerzo: true, cena: true }, ...]
-    // comensales: number
+    const { dias, comensales, categorias, excluirCategorias } = req.body;
+    // categorias: string[] - slugs a incluir (vacío = todas)
+    // excluirCategorias: string[] - slugs a excluir
 
     if (!dias || !Array.isArray(dias) || dias.length === 0) {
       return res.status(400).json({ error: 'Debes especificar al menos un día' });
@@ -16,14 +16,20 @@ export async function generarMenu(req: AuthRequest, res: Response, next: NextFun
 
     const numComensales = comensales || 1;
 
-    // Obtener todas las recetas del usuario + públicas, con sus ingredientes
+    // Obtener recetas con filtro de categorías
+    const whereRecetas: any = {
+      OR: [
+        { usuarioId: req.usuarioId },
+        { publica: true },
+      ],
+    };
+
+    if (categorias && categorias.length > 0) {
+      whereRecetas.categoria = { slug: { in: categorias } };
+    }
+
     const recetas = await prisma.receta.findMany({
-      where: {
-        OR: [
-          { usuarioId: req.usuarioId },
-          { publica: true },
-        ],
-      },
+      where: whereRecetas,
       include: {
         categoria: true,
         ingredientes: {
@@ -32,14 +38,20 @@ export async function generarMenu(req: AuthRequest, res: Response, next: NextFun
       },
     });
 
-    if (recetas.length === 0) {
-      return res.status(400).json({ error: 'No hay recetas disponibles. Añade recetas primero.' });
+    // Excluir categorías si se especifican
+    let recetasFiltradas = recetas;
+    if (excluirCategorias && excluirCategorias.length > 0) {
+      recetasFiltradas = recetas.filter(r => !excluirCategorias.includes(r.categoria?.slug));
+    }
+
+    if (recetasFiltradas.length === 0) {
+      return res.status(400).json({ error: 'No hay recetas disponibles con los filtros seleccionados.' });
     }
 
     // Generar menú aleatorio sin repetir recetas
     const menu: any[] = [];
     const usadas = new Set<string>();
-    const copiaRecetas = [...recetas];
+    const copiaRecetas = [...recetasFiltradas];
 
     for (const diaConfig of dias) {
       const { dia, almuerzo, cena } = diaConfig;

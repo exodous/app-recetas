@@ -4,11 +4,11 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { useI18n } from '../i18n';
+import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
 import { Receta, Categoria } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
-
-import { useAuth } from '../context/AuthContext';
+import { colors } from '../theme/colors';
 
 export default function HomeScreen({ navigation }: any) {
   const { t, lang } = useI18n();
@@ -55,23 +55,46 @@ export default function HomeScreen({ navigation }: any) {
     !busqueda || getNombre(r.nombre).toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const todasCategoria = { id: 'todas', nombre: { es: t.home.todas_categorias, en: t.home.todas_categorias }, icono: '🍽️', slug: '', orden: 0 };
+  const todasCategoria = {
+    id: 'todas',
+    nombre: { es: 'Todas', en: 'All' },
+    icono: '🍽️',
+    slug: '',
+    orden: 0,
+  };
   const listaCategorias = [todasCategoria, ...categorias];
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>🍳 Mis Recetas</Text>
+          <Text style={styles.headerSubtitle}>{recetas.length} recetas disponibles</Text>
+        </View>
         <TouchableOpacity style={styles.btnLogout} onPress={logout}>
-          <Text style={styles.btnLogoutText}>⟳</Text>
+          <Text style={styles.btnLogoutIcon}>⟳</Text>
         </TouchableOpacity>
       </View>
-      <TextInput
-        style={styles.buscador}
-        placeholder={t.common.buscar}
-        value={busqueda}
-        onChangeText={setBusqueda}
-      />
 
+      {/* Buscador */}
+      <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar receta..."
+          placeholderTextColor={colors.textLight}
+          value={busqueda}
+          onChangeText={setBusqueda}
+        />
+        {busqueda.length > 0 && (
+          <TouchableOpacity onPress={() => setBusqueda('')}>
+            <Text style={styles.clearIcon}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Categorías */}
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -80,22 +103,40 @@ export default function HomeScreen({ navigation }: any) {
         contentContainerStyle={styles.categoriasContainer}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.categoriaChip, categoriaSel === (item.id === 'todas' ? null : item.slug) && styles.categoriaActiva]}
+            style={[
+              styles.categoriaChip,
+              categoriaSel === (item.id === 'todas' ? null : item.slug) && styles.categoriaActiva,
+            ]}
             onPress={() => setCategoriaSel(item.id === 'todas' ? null : item.slug)}
           >
-            <Text style={styles.categoriaTexto}>{item.icono} {getNombre(item.nombre)}</Text>
+            <Text style={styles.catIcon}>{item.icono}</Text>
+            <Text
+              style={[
+                styles.categoriaTexto,
+                categoriaSel === (item.id === 'todas' ? null : item.slug) && styles.categoriaTextoActivo,
+              ]}
+            >
+              {getNombre(item.nombre)}
+            </Text>
           </TouchableOpacity>
         )}
       />
 
+      {/* Contenido */}
       {cargando ? (
-        <ActivityIndicator size="large" color="#FF6B35" style={styles.loader} />
+        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : recetasFiltradas.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>🍳</Text>
-          <Text style={styles.emptyTexto}>{t.home.sin_recetas}</Text>
-          <TouchableOpacity style={styles.botonNueva} onPress={() => navigation.navigate('NuevaReceta')}>
-            <Text style={styles.botonNuevaTexto}>+ {t.home.tu_primera_receta}</Text>
+          <Text style={styles.emptyTitle}>No hay recetas</Text>
+          <Text style={styles.emptyTexto}>
+            {busqueda ? 'No se encontraron resultados' : 'Crea tu primera receta para empezar'}
+          </Text>
+          <TouchableOpacity
+            style={styles.botonNueva}
+            onPress={() => navigation.navigate('NuevaReceta')}
+          >
+            <Text style={styles.botonNuevaTexto}>+ Nueva Receta</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -106,51 +147,175 @@ export default function HomeScreen({ navigation }: any) {
             <TouchableOpacity
               style={styles.recetaCard}
               onPress={() => navigation.navigate('DetalleReceta', { id: item.id })}
+              activeOpacity={0.7}
             >
               <View style={styles.recetaHeader}>
-                <Text style={styles.recetaNombre}>{getNombre(item.nombre)}</Text>
-                {item.publica && <Text style={styles.badge}>🌐</Text>}
+                <View style={styles.recetaHeaderLeft}>
+                  <Text style={styles.recetaNombre}>{getNombre(item.nombre)}</Text>
+                  {item.categoria && (
+                    <View style={styles.categoriaBadge}>
+                      <Text style={styles.categoriaBadgeText}>
+                        {item.categoria.icono} {getNombre(item.categoria.nombre)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                {item.publica && (
+                  <View style={styles.publicaBadge}>
+                    <Text style={styles.publicaBadgeText}>🌐</Text>
+                  </View>
+                )}
               </View>
+
               <View style={styles.recetaInfo}>
-                <Text style={styles.recetaCategoria}>
-                  {item.categoria?.icono} {item.categoria ? getNombre(item.categoria.nombre) : ''}
-                </Text>
-                {item.tiempoMin && <Text style={styles.recetaTiempo}>⏱ {item.tiempoMin} min</Text>}
+                {item.tiempoMin && (
+                  <View style={styles.infoChip}>
+                    <Text style={styles.infoChipText}>⏱ {item.tiempoMin} min</Text>
+                  </View>
+                )}
+                {item.porciones && (
+                  <View style={styles.infoChip}>
+                    <Text style={styles.infoChipText}>🍽 {item.porciones} pax</Text>
+                  </View>
+                )}
+                {item.ingredientes && (
+                  <View style={styles.infoChip}>
+                    <Text style={styles.infoChipText}>🧂 {item.ingredientes.length} ings</Text>
+                  </View>
+                )}
               </View>
-              {item.porciones && <Text style={styles.recetaPorciones}>🍽 {item.porciones} porciones</Text>}
             </TouchableOpacity>
           )}
-          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={onRefresh} colors={['#FF6B35']} />}
+          refreshControl={
+            <RefreshControl refreshing={refrescando} onRefresh={onRefresh} colors={[colors.primary]} />
+          }
           contentContainerStyle={styles.lista}
+          showsVerticalScrollIndicator={false}
         />
+      )}
+
+      {/* FAB */}
+      {!cargando && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => navigation.navigate('NuevaReceta')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.fabIcon}>+</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  topBar: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, paddingTop: 4 },
+  container: { flex: 1, backgroundColor: colors.background },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: colors.text },
+  headerSubtitle: { fontSize: 13, color: colors.textLight, marginTop: 2 },
   btnLogout: { padding: 8 },
-  btnLogoutText: { fontSize: 22, color: '#999' },
-  buscador: { backgroundColor: '#fff', margin: 12, padding: 12, borderRadius: 10, fontSize: 16, borderWidth: 1, borderColor: '#eee' },
-  categoriasContainer: { paddingHorizontal: 12, paddingBottom: 8 },
-  categoriaChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', marginRight: 8, borderWidth: 1, borderColor: '#eee' },
-  categoriaActiva: { backgroundColor: '#FF6B35', borderColor: '#FF6B35' },
-  categoriaTexto: { fontSize: 14, color: '#333' },
+  btnLogoutIcon: { fontSize: 22, color: colors.textLight },
+
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: colors.text },
+  clearIcon: { fontSize: 16, color: colors.textLight, padding: 4 },
+
+  categoriasContainer: { paddingHorizontal: 16, paddingBottom: 12 },
+  categoriaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  categoriaActiva: { backgroundColor: colors.primary, borderColor: colors.primary },
+  catIcon: { fontSize: 16, marginRight: 4 },
+  categoriaTexto: { fontSize: 13, color: colors.text, fontWeight: '500' },
+  categoriaTextoActivo: { color: colors.textWhite },
+
   loader: { flex: 1 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   emptyEmoji: { fontSize: 64, marginBottom: 16 },
-  emptyTexto: { fontSize: 16, color: '#999', marginBottom: 24 },
-  botonNueva: { backgroundColor: '#FF6B35', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
-  botonNuevaTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  lista: { paddingHorizontal: 12 },
-  recetaCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  recetaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  recetaNombre: { fontSize: 18, fontWeight: 'bold', color: '#333', flex: 1 },
-  badge: { fontSize: 14, marginLeft: 4 },
-  recetaInfo: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  recetaCategoria: { fontSize: 14, color: '#666' },
-  recetaTiempo: { fontSize: 14, color: '#666' },
-  recetaPorciones: { fontSize: 13, color: '#999', marginTop: 4 },
+  emptyTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 8 },
+  emptyTexto: { fontSize: 14, color: colors.textLight, marginBottom: 24, textAlign: 'center' },
+  botonNueva: { backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+  botonNuevaTexto: { color: colors.textWhite, fontSize: 16, fontWeight: 'bold' },
+
+  lista: { paddingHorizontal: 16, paddingBottom: 80 },
+
+  recetaCard: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  recetaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  recetaHeaderLeft: { flex: 1 },
+  recetaNombre: { fontSize: 17, fontWeight: 'bold', color: colors.text, marginBottom: 6 },
+  categoriaBadge: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: 'flex-start',
+  },
+  categoriaBadgeText: { fontSize: 12, color: colors.primary, fontWeight: '600' },
+  publicaBadge: { marginLeft: 8 },
+
+  recetaInfo: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  infoChip: {
+    backgroundColor: colors.borderLight,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  infoChipText: { fontSize: 12, color: colors.textSecondary },
+
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 80,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabIcon: { color: colors.textWhite, fontSize: 28, lineHeight: 30 },
 });
