@@ -95,6 +95,7 @@ export default function HomeScreen({ navigation }: any) {
       </View>
 
       {/* Categorías */}
+      <View style={styles.categoriasWrapper}>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -121,6 +122,7 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         )}
       />
+      </View>
 
       {/* Contenido */}
       {cargando ? (
@@ -239,7 +241,8 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: colors.text },
   clearIcon: { fontSize: 16, color: colors.textLight, padding: 4 },
 
-  categoriasContainer: { paddingHorizontal: 16, paddingBottom: 12 },
+  categoriasWrapper: { minHeight: 44, marginBottom: 4 },
+  categoriasContainer: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 4 },
   categoriaChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -248,6 +251,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.card,
     marginRight: 8,
+    marginBottom: 4,
     borderWidth: 1,
     borderColor: colors.border,
   },
