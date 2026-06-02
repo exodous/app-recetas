@@ -8,8 +8,11 @@ import * as api from '../services/api';
 import { Receta, Categoria } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { useAuth } from '../context/AuthContext';
+
 export default function HomeScreen({ navigation }: any) {
   const { t, lang } = useI18n();
+  const { logout } = useAuth();
   const [recetas, setRecetas] = useState<Receta[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaSel, setCategoriaSel] = useState<string | null>(null);
@@ -57,6 +60,11 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.btnLogout} onPress={logout}>
+          <Text style={styles.btnLogoutText}>⟳</Text>
+        </TouchableOpacity>
+      </View>
       <TextInput
         style={styles.buscador}
         placeholder={t.common.buscar}
@@ -122,6 +130,9 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
+  topBar: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, paddingTop: 4 },
+  btnLogout: { padding: 8 },
+  btnLogoutText: { fontSize: 22, color: '#999' },
   buscador: { backgroundColor: '#fff', margin: 12, padding: 12, borderRadius: 10, fontSize: 16, borderWidth: 1, borderColor: '#eee' },
   categoriasContainer: { paddingHorizontal: 12, paddingBottom: 8 },
   categoriaChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', marginRight: 8, borderWidth: 1, borderColor: '#eee' },

@@ -124,7 +124,8 @@ export async function crear(req: AuthRequest, res: Response, next: NextFunction)
     });
 
     res.status(201).json(receta);
-  } catch (err) {
+  } catch (err: any) {
+    console.error('❌ Error creando receta:', err.message);
     next(err);
   }
 }
