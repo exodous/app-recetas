@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, FlatList, Alert,
 } from 'react-native';
@@ -64,6 +64,10 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
       })();
     }, [])
   );
+
+  function getNombre(obj: { es: string; en: string }) {
+    return obj[lang] || obj.es;
+  }
 
   function abrirSelectorIngrediente() {
     setBuscarIng('');
