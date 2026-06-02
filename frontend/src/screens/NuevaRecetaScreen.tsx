@@ -122,7 +122,8 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
     }
     setCargando(true);
     try {
-      await api.crearReceta({
+      console.log('📤 Enviando receta:', { nombre, instrucciones, categoriaId, tiempoMin, porciones, ingredientes });
+      const resultado = await api.crearReceta({
         nombre: { es: nombre, en: nombreEn || nombre },
         instrucciones: { es: instrucciones, en: instruccionesEn || instrucciones },
         categoriaId,
@@ -134,9 +135,12 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
           unidad: ing.unidad,
         })),
       });
+      console.log('✅ Receta creada:', resultado);
       navigation.goBack();
     } catch (err: any) {
-      Alert.alert(t.common.error, err.response?.data?.error || 'Error al guardar');
+      console.error('❌ Error guardando receta:', err);
+      console.error('❌ Response:', err.response?.data);
+      Alert.alert(t.common.error, err.response?.data?.error || err.message || 'Error al guardar');
     } finally {
       setCargando(false);
     }
