@@ -48,17 +48,24 @@ export async function generarMenu(req: AuthRequest, res: Response, next: NextFun
       return res.status(400).json({ error: 'No hay recetas disponibles con los filtros seleccionados.' });
     }
 
+    // Separar recetas por tipo de comida
+    const recetasAlmuerzo = recetasFiltradas.filter(
+      r => !r.comidaTipo || r.comidaTipo.length === 0 || r.comidaTipo.includes('almuerzo') || r.comidaTipo.includes('ambos')
+    );
+    const recetasCena = recetasFiltradas.filter(
+      r => !r.comidaTipo || r.comidaTipo.length === 0 || r.comidaTipo.includes('cena') || r.comidaTipo.includes('ambos')
+    );
+
     // Generar menú aleatorio sin repetir recetas
     const menu: any[] = [];
     const usadas = new Set<string>();
-    const copiaRecetas = [...recetasFiltradas];
 
     for (const diaConfig of dias) {
       const { dia, almuerzo, cena } = diaConfig;
       const diaMenu: any = { dia, almuerzo: null, cena: null };
 
       if (almuerzo) {
-        const disponible = copiaRecetas.filter(r => !usadas.has(r.id));
+        const disponible = recetasAlmuerzo.filter(r => !usadas.has(r.id));
         if (disponible.length > 0) {
           const idx = Math.floor(Math.random() * disponible.length);
           const receta = disponible[idx];
@@ -68,7 +75,7 @@ export async function generarMenu(req: AuthRequest, res: Response, next: NextFun
       }
 
       if (cena) {
-        const disponible = copiaRecetas.filter(r => !usadas.has(r.id));
+        const disponible = recetasCena.filter(r => !usadas.has(r.id));
         if (disponible.length > 0) {
           const idx = Math.floor(Math.random() * disponible.length);
           const receta = disponible[idx];
@@ -210,5 +217,6 @@ function formatearReceta(receta: any, comensales: number) {
     porciones: receta.porciones,
     comensales,
     numIngredientes: receta.ingredientes.length,
+    comidaTipo: receta.comidaTipo || [],
   };
 }
