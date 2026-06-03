@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { useI18n } from '../i18n';
 import * as api from '../services/api';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import type { ThemeColors } from '../context/ThemeContext';
 
 const DIAS_SEMANA = [
   { key: 'lunes', label: 'Lunes', short: 'Lun' },
@@ -26,6 +27,8 @@ const FILTROS_PRESETS = [
 ];
 
 export default function MenuSemanalScreen({ navigation }: any) {
+  const { theme } = useTheme();
+  const s = styles(theme);
   const { lang } = useI18n();
   const [dias, setDias] = useState<Record<string, { almuerzo: boolean; cena: boolean }>>(() => {
     const initial: Record<string, any> = {};
@@ -144,15 +147,15 @@ export default function MenuSemanalScreen({ navigation }: any) {
   const comidasTotal = Object.values(dias).reduce((sum, d) => sum + (d.almuerzo ? 1 : 0) + (d.cena ? 1 : 0), 0);
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.titulo}>📅 Menú Semanal</Text>
+    <View style={s.container}>
+      <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={s.titulo}>📅 Menú Semanal</Text>
 
         {/* Comensales */}
-        <View style={styles.comensalesRow}>
-          <Text style={styles.label}>👥 Comensales</Text>
+        <View style={s.comensalesRow}>
+          <Text style={s.label}>👥 Comensales</Text>
           <TextInput
-            style={styles.inputComensales}
+            style={s.inputComensales}
             keyboardType="numeric"
             value={comensales}
             onChangeText={setComensales}
@@ -160,15 +163,15 @@ export default function MenuSemanalScreen({ navigation }: any) {
         </View>
 
         {/* Filtros */}
-        <Text style={styles.label}>🔍 Filtro de recetas</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtrosScroll}>
+        <Text style={s.label}>🔍 Filtro de recetas</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filtrosScroll}>
           {FILTROS_PRESETS.map(f => (
             <TouchableOpacity
               key={f.key}
-              style={[styles.filtroChip, filtroActivo === f.key && styles.filtroActivo]}
+              style={[s.filtroChip, filtroActivo === f.key && s.filtroActivo]}
               onPress={() => setFiltroActivo(f.key)}
             >
-              <Text style={[styles.filtroTexto, filtroActivo === f.key && styles.filtroTextoActivo]}>
+              <Text style={[s.filtroTexto, filtroActivo === f.key && s.filtroTextoActivo]}>
                 {f.label}
               </Text>
             </TouchableOpacity>
@@ -176,123 +179,123 @@ export default function MenuSemanalScreen({ navigation }: any) {
         </ScrollView>
 
         {/* Selector de días */}
-        <Text style={styles.label}>Días y comidas</Text>
-        <View style={styles.diasCard}>
-          <View style={styles.diaHeader}>
-            <Text style={styles.diaHeaderText}>Día</Text>
-            <Text style={styles.diaHeaderSmall}>☀️ Almuerzo</Text>
-            <Text style={styles.diaHeaderSmall}>🌙 Cena</Text>
+        <Text style={s.label}>Días y comidas</Text>
+        <View style={s.diasCard}>
+          <View style={s.diaHeader}>
+            <Text style={s.diaHeaderText}>Día</Text>
+            <Text style={s.diaHeaderSmall}>☀️ Almuerzo</Text>
+            <Text style={s.diaHeaderSmall}>🌙 Cena</Text>
           </View>
           {DIAS_SEMANA.map(dia => (
-            <View key={dia.key} style={styles.diaRow}>
-              <Text style={styles.diaLabel}>{dia.short}</Text>
+            <View key={dia.key} style={s.diaRow}>
+              <Text style={s.diaLabel}>{dia.short}</Text>
               <TouchableOpacity
-                style={[styles.checkBtn, dias[dia.key].almuerzo && styles.checkActivo]}
+                style={[s.checkBtn, dias[dia.key].almuerzo && s.checkActivo]}
                 onPress={() => toggleDia(dia.key, 'almuerzo')}
               >
-                <Text style={styles.checkTexto}>{dias[dia.key].almuerzo ? '✅' : '⬜'}</Text>
+                <Text style={s.checkTexto}>{dias[dia.key].almuerzo ? '✅' : '⬜'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.checkBtn, dias[dia.key].cena && styles.checkActivo]}
+                style={[s.checkBtn, dias[dia.key].cena && s.checkActivo]}
                 onPress={() => toggleDia(dia.key, 'cena')}
               >
-                <Text style={styles.checkTexto}>{dias[dia.key].cena ? '✅' : '⬜'}</Text>
+                <Text style={s.checkTexto}>{dias[dia.key].cena ? '✅' : '⬜'}</Text>
               </TouchableOpacity>
             </View>
           ))}
         </View>
 
-        <Text style={styles.comidasInfo}>{comidasTotal} comidas esta semana • Filtro: {FILTROS_PRESETS.find(f => f.key === filtroActivo)?.label}</Text>
+        <Text style={s.comidasInfo}>{comidasTotal} comidas esta semana • Filtro: {FILTROS_PRESETS.find(f => f.key === filtroActivo)?.label}</Text>
 
         {/* Generar */}
-        <TouchableOpacity style={styles.btnGenerar} onPress={generarMenu} disabled={generando}>
-          {generando ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnGenerarTexto}>🎲 Generar Menú</Text>}
+        <TouchableOpacity style={s.btnGenerar} onPress={generarMenu} disabled={generando}>
+          {generando ? <ActivityIndicator color={theme.textWhite} /> : <Text style={s.btnGenerarTexto}>🎲 Generar Menú</Text>}
         </TouchableOpacity>
 
         {/* Menú generado */}
         {menu && menu.length > 0 && (
-          <View style={styles.menuContainer}>
-            <Text style={styles.menuTitulo}>📋 Tu menú semanal</Text>
+          <View style={s.menuContainer}>
+            <Text style={s.menuTitulo}>📋 Tu menú semanal</Text>
             {menu.map((dia, idx) => (
-              <View key={idx} style={styles.diaMenuCard}>
-                <Text style={styles.diaMenuTitulo}>{dia.dia.charAt(0).toUpperCase() + dia.dia.slice(1)}</Text>
+              <View key={idx} style={s.diaMenuCard}>
+                <Text style={s.diaMenuTitulo}>{dia.dia.charAt(0).toUpperCase() + dia.dia.slice(1)}</Text>
                 {['almuerzo', 'cena'].map(tipo => {
                   const comida = dia[tipo];
                   return React.createElement(
                     comida ? 'TouchableOpacity' : 'View',
                     {
                       key: tipo,
-                      style: comida ? styles.comidaRow : styles.comidaVacia,
+                      style: comida ? s.comidaRow : s.comidaVacia,
                       ...(comida ? { onPress: () => abrirModificar(idx, tipo), activeOpacity: 0.7 } : {}),
                     },
-                    React.createElement(View, { style: comida ? styles.comidaInfo : {} },
-                      React.createElement(Text, { style: styles.comidaTipo }, tipo === 'almuerzo' ? '☀️ Almuerzo' : '🌙 Cena'),
-                      comida ? React.createElement(Text, { style: styles.comidaNombre }, getNombre(comida.nombre)) : null,
-                      comida && comida.tiempoMin ? React.createElement(Text, { style: styles.comidaDetalle }, `⏱ ${comida.tiempoMin} min`) : null,
+                    React.createElement(View, { style: comida ? s.comidaInfo : {} },
+                      React.createElement(Text, { style: s.comidaTipo }, tipo === 'almuerzo' ? '☀️ Almuerzo' : '🌙 Cena'),
+                      comida ? React.createElement(Text, { style: s.comidaNombre }, getNombre(comida.nombre)) : null,
+                      comida && comida.tiempoMin ? React.createElement(Text, { style: s.comidaDetalle }, `⏱ ${comida.tiempoMin} min`) : null,
                     ),
-                    comida ? React.createElement(Text, { style: styles.btnCambiar }, '↻') : React.createElement(Text, { style: styles.comidaVaciaText }, `Sin ${tipo}`),
+                    comida ? React.createElement(Text, { style: s.btnCambiar }, '↻') : React.createElement(Text, { style: s.comidaVaciaText }, `Sin ${tipo}`),
                   );
                 })}
               </View>
             ))}
 
-            <TouchableOpacity style={styles.btnLista} onPress={generarLista} disabled={generandoLista}>
-              {generandoLista ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnListaTexto}>🛒 Generar Lista de la Compra</Text>}
+            <TouchableOpacity style={s.btnLista} onPress={generarLista} disabled={generandoLista}>
+              {generandoLista ? <ActivityIndicator color={theme.textWhite} /> : <Text style={s.btnListaTexto}>🛒 Generar Lista de la Compra</Text>}
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => setMenu(null)} style={styles.btnNuevo}>
-              <Text style={styles.btnNuevoTexto}>🗑 Limpiar menú</Text>
+            <TouchableOpacity onPress={() => setMenu(null)} style={s.btnNuevo}>
+              <Text style={s.btnNuevoTexto}>🗑 Limpiar menú</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Lista de la compra */}
         {mostrarLista && listaCompra && (
-          <View style={styles.listaContainer}>
-            <Text style={styles.listaTitulo}>🛒 Lista de la Compra</Text>
+          <View style={s.listaContainer}>
+            <Text style={s.listaTitulo}>🛒 Lista de la Compra</Text>
 
             {/* Selector supermercado */}
-            <View style={styles.supRow}>
-              {(['todos', 'mercadona', 'lidl'] as const).map(s => (
-                <TouchableOpacity key={s} style={[styles.supChip, supermercadoSel === s && styles.supChipActivo]} onPress={() => setSupermercadoSel(s)}>
-                  <Text style={styles.supChipText}>{s === 'todos' ? '🏪 Todos' : s === 'mercadona' ? '🟡 Mercadona' : '🔵 Lidl'}</Text>
+            <View style={s.supRow}>
+              {(['todos', 'mercadona', 'lidl'] as const).map(sup => (
+                <TouchableOpacity key={sup} style={[s.supChip, supermercadoSel === sup && s.supChipActivo]} onPress={() => setSupermercadoSel(sup)}>
+                  <Text style={s.supChipText}>{sup === 'todos' ? '🏪 Todos' : sup === 'mercadona' ? '🟡 Mercadona' : '🔵 Lidl'}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Totales */}
-            <View style={styles.totalesBox}>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>🟡 Mercadona</Text>
-                <Text style={styles.totalValor}>{listaCompra.totalEstimado?.mercadona?.toFixed(2) || '?'}€</Text>
+            <View style={s.totalesBox}>
+              <View style={s.totalRow}>
+                <Text style={s.totalLabel}>🟡 Mercadona</Text>
+                <Text style={s.totalValor}>{listaCompra.totalEstimado?.mercadona?.toFixed(2) || '?'}€</Text>
               </View>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>🔵 Lidl</Text>
-                <Text style={styles.totalValor}>{listaCompra.totalEstimado?.lidl?.toFixed(2) || '?'}€</Text>
+              <View style={s.totalRow}>
+                <Text style={s.totalLabel}>🔵 Lidl</Text>
+                <Text style={s.totalValor}>{listaCompra.totalEstimado?.lidl?.toFixed(2) || '?'}€</Text>
               </View>
             </View>
 
             {/* Items */}
             {listaCompra.items?.map((item: any, idx: number) => (
-              <View key={idx} style={styles.itemRow}>
-                <View style={styles.itemLeft}>
-                  <Text style={styles.itemNombre}>{getNombre(item.nombre)}</Text>
-                  <Text style={styles.itemCantidad}>{item.cantidad} {item.unidad}</Text>
+              <View key={idx} style={s.itemRow}>
+                <View style={s.itemLeft}>
+                  <Text style={s.itemNombre}>{getNombre(item.nombre)}</Text>
+                  <Text style={s.itemCantidad}>{item.cantidad} {item.unidad}</Text>
                 </View>
-                <View style={styles.itemRight}>
-                  {item.precioMercadona != null && <Text style={styles.itemPrecioM}>🟡 {item.precioMercadona.toFixed(2)}€</Text>}
-                  {item.precioLidl != null && <Text style={styles.itemPrecioL}>🔵 {item.precioLidl.toFixed(2)}€</Text>}
-                  {item.precioMercadona == null && item.precioLidl == null && <Text style={styles.itemPrecioND}>N/D</Text>}
+                <View style={s.itemRight}>
+                  {item.precioMercadona != null && <Text style={s.itemPrecioM}>🟡 {item.precioMercadona.toFixed(2)}€</Text>}
+                  {item.precioLidl != null && <Text style={s.itemPrecioL}>🔵 {item.precioLidl.toFixed(2)}€</Text>}
+                  {item.precioMercadona == null && item.precioLidl == null && <Text style={s.itemPrecioND}>N/D</Text>}
                 </View>
               </View>
             ))}
 
             {/* Botones */}
-            <TouchableOpacity style={styles.btnCopiar} onPress={copiarLista}>
-              <Text style={styles.btnCopiarTexto}>📋 Copiar lista (compartir)</Text>
+            <TouchableOpacity style={s.btnCopiar} onPress={copiarLista}>
+              <Text style={s.btnCopiarTexto}>📋 Copiar lista (compartir)</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnCerrar} onPress={() => setMostrarLista(false)}>
-              <Text style={styles.btnCerrarTexto}>Cerrar</Text>
+            <TouchableOpacity style={s.btnCerrar} onPress={() => setMostrarLista(false)}>
+              <Text style={s.btnCerrarTexto}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -300,21 +303,21 @@ export default function MenuSemanalScreen({ navigation }: any) {
 
       {/* Modal modificar */}
       <Modal visible={modificando !== null} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitulo}>Cambiar {modificando?.tipo === 'almuerzo' ? 'almuerzo' : 'cena'}</Text>
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitulo}>Cambiar {modificando?.tipo === 'almuerzo' ? 'almuerzo' : 'cena'}</Text>
             <FlatList
               data={recetasDisponibles}
               keyExtractor={(item) => item.id}
-              style={styles.recetasList}
+              style={s.recetasList}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.recetaItem} onPress={() => aplicarModificacion(item)}>
-                  <Text style={styles.recetaNombre}>{getNombre(item.nombre)}</Text>
-                  <Text style={styles.recetaDetalle}>{item.categoria?.icono} {item.tiempoMin}min</Text>
+                <TouchableOpacity style={s.recetaItem} onPress={() => aplicarModificacion(item)}>
+                  <Text style={s.recetaNombre}>{getNombre(item.nombre)}</Text>
+                  <Text style={s.recetaDetalle}>{item.categoria?.icono} {item.tiempoMin}min</Text>
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity style={styles.btnCerrarModal} onPress={() => setModificando(null)}>
+            <TouchableOpacity style={s.btnCerrarModal} onPress={() => setModificando(null)}>
               <Text>Cancelar</Text>
             </TouchableOpacity>
           </View>
@@ -324,95 +327,95 @@ export default function MenuSemanalScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+const styles = (theme: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background },
   scrollContent: { padding: 16, paddingBottom: 40 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: colors.text, marginBottom: 16 },
+  titulo: { fontSize: 26, fontWeight: 'bold', color: theme.text, marginBottom: 16 },
 
-  label: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 6, marginTop: 4 },
+  label: { fontSize: 14, fontWeight: '600', color: theme.text, marginBottom: 6, marginTop: 4 },
   comensalesRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   inputComensales: {
-    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
+    backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, borderRadius: 12,
     padding: 12, fontSize: 18, textAlign: 'center', width: 80,
   },
 
   filtrosScroll: { marginBottom: 12 },
-  filtroChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.card, marginRight: 8, borderWidth: 1, borderColor: colors.border },
-  filtroActivo: { backgroundColor: colors.primary, borderColor: colors.primary },
-  filtroTexto: { fontSize: 13, color: colors.text, fontWeight: '500' },
-  filtroTextoActivo: { color: '#fff' },
+  filtroChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: theme.card, marginRight: 8, borderWidth: 1, borderColor: theme.border },
+  filtroActivo: { backgroundColor: theme.primary, borderColor: theme.primary },
+  filtroTexto: { fontSize: 13, color: theme.text, fontWeight: '500' },
+  filtroTextoActivo: { color: theme.textWhite },
 
-  diasCard: { backgroundColor: colors.card, borderRadius: 16, padding: 12, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 },
-  diaHeader: { flexDirection: 'row', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.borderLight, marginBottom: 4 },
-  diaHeaderText: { flex: 1, fontSize: 12, fontWeight: '600', color: colors.textLight },
-  diaHeaderSmall: { width: 90, fontSize: 11, fontWeight: '600', color: colors.textLight, textAlign: 'center' },
+  diasCard: { backgroundColor: theme.card, borderRadius: 16, padding: 12, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 },
+  diaHeader: { flexDirection: 'row', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: theme.borderLight, marginBottom: 4 },
+  diaHeaderText: { flex: 1, fontSize: 12, fontWeight: '600', color: theme.textLight },
+  diaHeaderSmall: { width: 90, fontSize: 11, fontWeight: '600', color: theme.textLight, textAlign: 'center' },
   diaRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  diaLabel: { flex: 1, fontSize: 14, fontWeight: '500', color: colors.text },
+  diaLabel: { flex: 1, fontSize: 14, fontWeight: '500', color: theme.text },
   checkBtn: { width: 90, alignItems: 'center', paddingVertical: 4 },
   checkActivo: {},
   checkTexto: { fontSize: 18 },
 
-  comidasInfo: { fontSize: 12, color: colors.textLight, textAlign: 'center', marginBottom: 12 },
+  comidasInfo: { fontSize: 12, color: theme.textLight, textAlign: 'center', marginBottom: 12 },
 
-  btnGenerar: { backgroundColor: colors.primary, borderRadius: 14, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 5 },
-  btnGenerarTexto: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  btnGenerar: { backgroundColor: theme.primary, borderRadius: 14, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 5 },
+  btnGenerarTexto: { color: theme.textWhite, fontSize: 18, fontWeight: 'bold' },
 
   menuContainer: { marginTop: 20 },
-  menuTitulo: { fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 12 },
+  menuTitulo: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 12 },
 
-  diaMenuCard: { backgroundColor: colors.card, borderRadius: 16, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3, borderLeftWidth: 4, borderLeftColor: colors.primary },
-  diaMenuTitulo: { fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 8 },
+  diaMenuCard: { backgroundColor: theme.card, borderRadius: 16, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3, borderLeftWidth: 4, borderLeftColor: theme.primary },
+  diaMenuTitulo: { fontSize: 16, fontWeight: 'bold', color: theme.primary, marginBottom: 8 },
 
-  comidaRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  comidaRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.borderLight },
   comidaInfo: { flex: 1 },
-  comidaTipo: { fontSize: 11, color: colors.textLight },
-  comidaNombre: { fontSize: 15, fontWeight: '600', color: colors.text, marginTop: 2 },
-  comidaDetalle: { fontSize: 12, color: colors.textSecondary, marginTop: 1 },
+  comidaTipo: { fontSize: 11, color: theme.textLight },
+  comidaNombre: { fontSize: 15, fontWeight: '600', color: theme.text, marginTop: 2 },
+  comidaDetalle: { fontSize: 12, color: theme.textSecondary, marginTop: 1 },
   comidaVacia: { paddingVertical: 6 },
-  comidaVaciaText: { fontSize: 13, color: colors.textLight, fontStyle: 'italic' },
+  comidaVaciaText: { fontSize: 13, color: theme.textLight, fontStyle: 'italic' },
 
-  btnCambiar: { fontSize: 22, color: colors.primary, padding: 4 },
+  btnCambiar: { fontSize: 22, color: theme.primary, padding: 4 },
 
-  btnLista: { backgroundColor: colors.secondary, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 16 },
-  btnListaTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  btnLista: { backgroundColor: theme.secondary, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 16 },
+  btnListaTexto: { color: theme.textWhite, fontSize: 16, fontWeight: 'bold' },
 
-  btnNuevo: { backgroundColor: colors.card, borderRadius: 12, padding: 12, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: colors.border },
-  btnNuevoTexto: { color: colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  btnNuevo: { backgroundColor: theme.card, borderRadius: 12, padding: 12, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: theme.border },
+  btnNuevoTexto: { color: theme.textSecondary, fontSize: 14, fontWeight: '500' },
 
-  listaContainer: { marginTop: 20, backgroundColor: colors.card, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
-  listaTitulo: { fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 12 },
+  listaContainer: { marginTop: 20, backgroundColor: theme.card, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+  listaTitulo: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 12 },
 
   supRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  supChip: { flex: 1, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', backgroundColor: colors.borderLight },
-  supChipActivo: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  supChip: { flex: 1, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center', backgroundColor: theme.borderLight },
+  supChipActivo: { borderColor: theme.primary, backgroundColor: theme.primaryLight },
   supChipText: { fontSize: 12, fontWeight: '500' },
 
-  totalesBox: { backgroundColor: colors.borderLight, borderRadius: 12, padding: 12, marginBottom: 12 },
+  totalesBox: { backgroundColor: theme.borderLight, borderRadius: 12, padding: 12, marginBottom: 12 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  totalLabel: { fontSize: 14, color: colors.textSecondary },
-  totalValor: { fontSize: 14, fontWeight: 'bold', color: colors.primary },
+  totalLabel: { fontSize: 14, color: theme.textSecondary },
+  totalValor: { fontSize: 14, fontWeight: 'bold', color: theme.primary },
 
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  itemRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.borderLight },
   itemLeft: { flex: 1 },
-  itemNombre: { fontSize: 14, color: colors.text, fontWeight: '500' },
-  itemCantidad: { fontSize: 12, color: colors.textLight },
+  itemNombre: { fontSize: 14, color: theme.text, fontWeight: '500' },
+  itemCantidad: { fontSize: 12, color: theme.textLight },
   itemRight: { alignItems: 'flex-end' },
-  itemPrecioM: { fontSize: 12, color: '#666' },
-  itemPrecioL: { fontSize: 12, color: '#666' },
-  itemPrecioND: { fontSize: 12, color: colors.textLight },
+  itemPrecioM: { fontSize: 12, color: theme.textSecondary },
+  itemPrecioL: { fontSize: 12, color: theme.textSecondary },
+  itemPrecioND: { fontSize: 12, color: theme.textLight },
 
-  btnCopiar: { backgroundColor: colors.accent, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 12 },
-  btnCopiarTexto: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  btnCopiar: { backgroundColor: theme.accent, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 12 },
+  btnCopiarTexto: { color: theme.textWhite, fontSize: 15, fontWeight: '600' },
 
   btnCerrar: { padding: 12, alignItems: 'center', marginTop: 4 },
-  btnCerrarTexto: { color: colors.textLight, fontSize: 14 },
+  btnCerrarTexto: { color: theme.textLight, fontSize: 14 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' },
-  modalTitulo: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: colors.text },
+  modalContent: { backgroundColor: theme.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' },
+  modalTitulo: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: theme.text },
   recetasList: { maxHeight: 400 },
-  recetaItem: { padding: 14, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
-  recetaNombre: { fontSize: 15, color: colors.text, fontWeight: '500' },
-  recetaDetalle: { fontSize: 12, color: colors.textLight, marginTop: 2 },
+  recetaItem: { padding: 14, borderBottomWidth: 1, borderBottomColor: theme.borderLight },
+  recetaNombre: { fontSize: 15, color: theme.text, fontWeight: '500' },
+  recetaDetalle: { fontSize: 12, color: theme.textLight, marginTop: 2 },
   btnCerrarModal: { marginTop: 12, padding: 14, alignItems: 'center' },
 });

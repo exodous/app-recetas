@@ -7,14 +7,16 @@ import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/nativ
 import { getReceta, descargarReceta, actualizarReceta, eliminarReceta } from '../services/api';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import type { Receta } from '../types';
-import { colors } from '../theme/colors';
 
 export default function DetalleRecetaScreen({ route, navigation }: any) {
   const { id } = route.params as { id: string };
   const { t, lang } = useI18n();
   const { usuario } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const nav = useNavigation<any>();
+  const s = styles(theme);
 
   const [receta, setReceta] = useState<Receta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -139,80 +141,83 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando...</Text>
+      <View style={s.centered}>
+        <ActivityIndicator size="large" color={theme.primary} />
+        <Text style={s.loadingText}>Cargando...</Text>
       </View>
     );
   }
 
   if (!receta) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Receta no encontrada</Text>
-        <TouchableOpacity style={styles.btnPrimary} onPress={cargarReceta}>
-          <Text style={styles.btnPrimaryText}>Reintentar</Text>
+      <View style={s.centered}>
+        <Text style={s.errorText}>Receta no encontrada</Text>
+        <TouchableOpacity style={s.btnPrimary} onPress={cargarReceta}>
+          <Text style={s.btnPrimaryText}>Reintentar</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <View style={s.container}>
+      <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header con gradiente simulado */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            {receta.categoria && (
-              <View style={styles.catBadge}>
-                <Text style={styles.catBadgeText}>
-                  {receta.categoria.icono} {getNombre(receta.categoria.nombre)}
-                </Text>
+        <View style={s.header}>
+          <View style={s.headerRow}>
+            <Text style={s.headerTitle}>{getNombre(receta.nombre)}</Text>
+            <TouchableOpacity onPress={toggleTheme} style={s.themeToggle}>
+              <Text style={s.themeToggleText}>{theme.mode === 'light' ? '🌙' : '☀️'}</Text>
+            </TouchableOpacity>
+          </View>
+          {receta.categoria && (
+            <View style={s.catBadge}>
+              <Text style={s.catBadgeText}>
+                {receta.categoria.icono} {getNombre(receta.categoria.nombre)}
+              </Text>
+            </View>
+          )}
+          <View style={s.metaRow}>
+            {receta.tiempoMin && (
+              <View style={s.metaChip}>
+                <Text style={s.metaText}>⏱ {receta.tiempoMin} min</Text>
               </View>
             )}
-            <Text style={styles.titulo}>{getNombre(receta.nombre)}</Text>
-            <View style={styles.metaRow}>
-              {receta.tiempoMin && (
-                <View style={styles.metaChip}>
-                  <Text style={styles.metaText}>⏱ {receta.tiempoMin} min</Text>
-                </View>
-              )}
-              {receta.porciones && (
-                <View style={styles.metaChip}>
-                  <Text style={styles.metaText}>🍽 {receta.porciones} pax</Text>
-                </View>
-              )}
-              <View style={styles.metaChip}>
-                <Text style={styles.metaText}>🧂 {receta.ingredientes?.length || 0} ings</Text>
+            {receta.porciones && (
+              <View style={s.metaChip}>
+                <Text style={s.metaText}>🍽 {receta.porciones} pax</Text>
               </View>
+            )}
+            <View style={s.metaChip}>
+              <Text style={s.metaText}>🧂 {receta.ingredientes?.length || 0} ings</Text>
             </View>
           </View>
         </View>
 
         {/* Valor nutricional */}
         {nutricion && (
-          <View style={styles.nutricionCard}>
-            <Text style={styles.nutricionTitulo}>📊 Valor nutricional (total receta)</Text>
-            <View style={styles.nutricionGrid}>
-              <View style={styles.nutItem}>
-                <Text style={styles.nutValor}>{nutricion.cal}</Text>
-                <Text style={styles.nutLabel}>kcal</Text>
+          <View style={s.nutricionCard}>
+            <Text style={s.nutricionTitulo}>📊 Valor nutricional (total receta)</Text>
+            <View style={s.nutricionGrid}>
+              <View style={s.nutItem}>
+                <Text style={s.nutValor}>{nutricion.cal}</Text>
+                <Text style={s.nutLabel}>kcal</Text>
               </View>
-              <View style={styles.nutItem}>
-                <Text style={[styles.nutValor, { color: '#4CAF50' }]}>{nutricion.prot}g</Text>
-                <Text style={styles.nutLabel}>Proteínas</Text>
+              <View style={s.nutItem}>
+                <Text style={[s.nutValor, { color: theme.secondary }]}>{nutricion.prot}g</Text>
+                <Text style={s.nutLabel}>Proteínas</Text>
               </View>
-              <View style={styles.nutItem}>
-                <Text style={[styles.nutValor, { color: '#2196F3' }]}>{nutricion.hc}g</Text>
-                <Text style={styles.nutLabel}>Hidratos</Text>
+              <View style={s.nutItem}>
+                <Text style={[s.nutValor, { color: theme.accent }]}>{nutricion.hc}g</Text>
+                <Text style={s.nutLabel}>Hidratos</Text>
               </View>
-              <View style={styles.nutItem}>
-                <Text style={[styles.nutValor, { color: '#FFC107' }]}>{nutricion.gras}g</Text>
-                <Text style={styles.nutLabel}>Grasas</Text>
+              <View style={s.nutItem}>
+                <Text style={[s.nutValor, { color: theme.warning }]}>{nutricion.gras}g</Text>
+                <Text style={s.nutLabel}>Grasas</Text>
               </View>
-              <View style={styles.nutItem}>
-                <Text style={[styles.nutValor, { color: '#9C27B0' }]}>{nutricion.fib}g</Text>
-                <Text style={styles.nutLabel}>Fibra</Text>
+              <View style={s.nutItem}>
+                <Text style={[s.nutValor, { color: '#9C27B0' }]}>{nutricion.fib}g</Text>
+                <Text style={s.nutLabel}>Fibra</Text>
               </View>
             </View>
           </View>
@@ -220,15 +225,15 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
         {/* Ingredientes */}
         {receta.ingredientes && receta.ingredientes.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>🧂 Ingredientes</Text>
+          <View style={s.card}>
+            <Text style={s.cardTitle}>🧂 Ingredientes</Text>
             {receta.ingredientes.map((ri, index) => {
               const nombreIng = ri.ingrediente?.nombre ? getNombre(ri.ingrediente.nombre) : '';
               return (
-                <View key={index} style={styles.ingRow}>
-                  <View style={styles.ingDot} />
-                  <Text style={styles.ingText}>
-                    <Text style={styles.ingCantidad}>{ri.cantidad} {ri.unidad}</Text>
+                <View key={index} style={s.ingRow}>
+                  <View style={s.ingDot} />
+                  <Text style={s.ingText}>
+                    <Text style={s.ingCantidad}>{ri.cantidad} {ri.unidad}</Text>
                     {'  '}{nombreIng}
                   </Text>
                 </View>
@@ -239,74 +244,74 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
         {/* Instrucciones */}
         {getNombre(receta.instrucciones) ? (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>👨‍🍳 Preparación</Text>
-            <Text style={styles.instTexto}>{getNombre(receta.instrucciones)}</Text>
+          <View style={s.card}>
+            <Text style={s.cardTitle}>👨‍🍳 Preparación</Text>
+            <Text style={s.instTexto}>{getNombre(receta.instrucciones)}</Text>
           </View>
         ) : null}
 
         {/* Botones de acción */}
-        <View style={styles.botonesContainer}>
-          <TouchableOpacity style={styles.btnAccion} onPress={handleDescargar} disabled={downloading}>
-            {downloading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.btnAccionText}>📥 Descargar</Text>}
+        <View style={s.botonesContainer}>
+          <TouchableOpacity style={s.btnAccion} onPress={handleDescargar} disabled={downloading}>
+            {downloading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.btnAccionText}>📥 Descargar</Text>}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.btnAccionSec} onPress={handleCompartir}>
-            <Text style={styles.btnAccionSecText}>🔗 Compartir</Text>
+          <TouchableOpacity style={s.btnAccionSec} onPress={handleCompartir}>
+            <Text style={s.btnAccionSecText}>🔗 Compartir</Text>
           </TouchableOpacity>
 
           {esPropietario && (
             <>
-              <TouchableOpacity style={styles.btnAccionSec} onPress={abrirEditar}>
-                <Text style={styles.btnAccionSecText}>✏️ Editar</Text>
+              <TouchableOpacity style={s.btnAccionSec} onPress={abrirEditar}>
+                <Text style={s.btnAccionSecText}>✏️ Editar</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.btnEliminar} onPress={() => setEliConfirm(true)}>
-                <Text style={styles.btnEliminarText}>🗑 Eliminar</Text>
+              <TouchableOpacity style={s.btnEliminar} onPress={() => setEliConfirm(true)}>
+                <Text style={s.btnEliminarText}>🗑 Eliminar</Text>
               </TouchableOpacity>
             </>
           )}
         </View>
 
-        <View style={styles.bottomSpacer} />
+        <View style={s.bottomSpacer} />
       </ScrollView>
 
       {/* Modal Editar */}
       <Modal visible={editando} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalTitulo}>✏️ Editar receta</Text>
+              <Text style={s.modalTitulo}>✏️ Editar receta</Text>
 
-              <Text style={styles.label}>🇪🇸 Nombre *</Text>
-              <TextInput style={styles.input} value={editNombre} onChangeText={setEditNombre} />
+              <Text style={s.label}>🇪🇸 Nombre *</Text>
+              <TextInput style={s.input} value={editNombre} onChangeText={setEditNombre} />
 
-              <Text style={styles.label}>🇬🇧 Nombre (EN)</Text>
-              <TextInput style={styles.input} value={editNombreEn} onChangeText={setEditNombreEn} />
+              <Text style={s.label}>🇬🇧 Nombre (EN)</Text>
+              <TextInput style={s.input} value={editNombreEn} onChangeText={setEditNombreEn} />
 
-              <View style={styles.row2}>
-                <View style={styles.half}>
-                  <Text style={styles.label}>⏱ Tiempo (min)</Text>
-                  <TextInput style={styles.input} value={editTiempo} onChangeText={setEditTiempo} keyboardType="numeric" />
+              <View style={s.row2}>
+                <View style={s.half}>
+                  <Text style={s.label}>⏱ Tiempo (min)</Text>
+                  <TextInput style={s.input} value={editTiempo} onChangeText={setEditTiempo} keyboardType="numeric" />
                 </View>
-                <View style={styles.half}>
-                  <Text style={styles.label}>🍽 Porciones</Text>
-                  <TextInput style={styles.input} value={editPorciones} onChangeText={setEditPorciones} keyboardType="numeric" />
+                <View style={s.half}>
+                  <Text style={s.label}>🍽 Porciones</Text>
+                  <TextInput style={s.input} value={editPorciones} onChangeText={setEditPorciones} keyboardType="numeric" />
                 </View>
               </View>
 
-              <Text style={styles.label}>🇪🇸 Instrucciones *</Text>
-              <TextInput style={[styles.input, styles.textArea]} value={editInst} onChangeText={setEditInst} multiline numberOfLines={6} />
+              <Text style={s.label}>🇪🇸 Instrucciones *</Text>
+              <TextInput style={[s.input, s.textArea]} value={editInst} onChangeText={setEditInst} multiline numberOfLines={6} />
 
-              <Text style={styles.label}>🇬🇧 Instrucciones (EN)</Text>
-              <TextInput style={[styles.input, styles.textArea]} value={editInstEn} onChangeText={setEditInstEn} multiline numberOfLines={6} />
+              <Text style={s.label}>🇬🇧 Instrucciones (EN)</Text>
+              <TextInput style={[s.input, s.textArea]} value={editInstEn} onChangeText={setEditInstEn} multiline numberOfLines={6} />
 
-              <View style={styles.modalBotones}>
-                <TouchableOpacity style={styles.btnCancelar} onPress={() => setEditando(false)}>
+              <View style={s.modalBotones}>
+                <TouchableOpacity style={s.btnCancelar} onPress={() => setEditando(false)}>
                   <Text>Cancelar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.btnGuardar} onPress={guardarEdicion} disabled={guardando}>
-                  {guardando ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.btnGuardarTexto}>Guardar</Text>}
+                <TouchableOpacity style={s.btnGuardar} onPress={guardarEdicion} disabled={guardando}>
+                  {guardando ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.btnGuardarTexto}>Guardar</Text>}
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -316,16 +321,16 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
       {/* Modal Confirmar Eliminar */}
       <Modal visible={eliConfirm} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmBox}>
-            <Text style={styles.confirmTitulo}>🗑 Eliminar receta</Text>
-            <Text style={styles.confirmTexto}>¿Estás seguro? Esta acción no se puede deshacer.</Text>
-            <View style={styles.confirmBotones}>
-              <TouchableOpacity style={styles.btnCancelar} onPress={() => setEliConfirm(false)}>
+        <View style={s.modalOverlay}>
+          <View style={s.confirmBox}>
+            <Text style={s.confirmTitulo}>🗑 Eliminar receta</Text>
+            <Text style={s.confirmTexto}>¿Estás seguro? Esta acción no se puede deshacer.</Text>
+            <View style={s.confirmBotones}>
+              <TouchableOpacity style={s.btnCancelar} onPress={() => setEliConfirm(false)}>
                 <Text>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.btnEliminarConfirm} onPress={handleEliminar}>
-                <Text style={styles.btnEliminarConfirmText}>Eliminar</Text>
+              <TouchableOpacity style={s.btnEliminarConfirm} onPress={handleEliminar}>
+                <Text style={s.btnEliminarConfirmText}>Eliminar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -335,24 +340,36 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+function styles(theme: any) {
+return StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background },
   scrollContent: { paddingBottom: 40 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
-  loadingText: { marginTop: 12, fontSize: 16, color: colors.textSecondary },
-  errorText: { fontSize: 16, color: colors.danger, marginBottom: 16 },
-  btnPrimary: { backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 12 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background },
+  loadingText: { marginTop: 12, fontSize: 16, color: theme.textSecondary },
+  errorText: { fontSize: 16, color: theme.danger, marginBottom: 16 },
+  btnPrimary: { backgroundColor: theme.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 12 },
   btnPrimaryText: { color: '#fff', fontWeight: '600', fontSize: 15 },
 
   header: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.headerBg,
     paddingTop: 20,
     paddingBottom: 24,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
-  headerContent: {},
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: theme.textWhite, flex: 1 },
+  themeToggle: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  themeToggleText: { fontSize: 22 },
   catBadge: {
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 20,
@@ -362,7 +379,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   catBadgeText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   metaChip: {
     backgroundColor: 'rgba(255,255,255,0.15)',
@@ -373,120 +389,121 @@ const styles = StyleSheet.create({
   metaText: { color: '#fff', fontSize: 13, fontWeight: '500' },
 
   nutricionCard: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     marginHorizontal: 16,
     marginTop: 16,
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: theme.cardShadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
   },
-  nutricionTitulo: { fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: 12 },
+  nutricionTitulo: { fontSize: 15, fontWeight: '600', color: theme.text, marginBottom: 12 },
   nutricionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   nutItem: {
     flex: 1,
     minWidth: 60,
     alignItems: 'center',
-    backgroundColor: colors.borderLight,
+    backgroundColor: theme.borderLight,
     borderRadius: 12,
     paddingVertical: 10,
   },
-  nutValor: { fontSize: 18, fontWeight: 'bold', color: colors.primary },
-  nutLabel: { fontSize: 11, color: colors.textLight, marginTop: 2 },
+  nutValor: { fontSize: 18, fontWeight: 'bold', color: theme.primary },
+  nutLabel: { fontSize: 11, color: theme.textLight, marginTop: 2 },
 
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: theme.cardShadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
   },
-  cardTitle: { fontSize: 17, fontWeight: '700', color: colors.primary, marginBottom: 12 },
+  cardTitle: { fontSize: 17, fontWeight: '700', color: theme.primary, marginBottom: 12 },
 
   ingRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  ingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginRight: 10 },
-  ingText: { fontSize: 15, color: colors.text, flex: 1 },
-  ingCantidad: { fontWeight: '600', color: colors.primary },
+  ingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.primary, marginRight: 10 },
+  ingText: { fontSize: 15, color: theme.text, flex: 1 },
+  ingCantidad: { fontWeight: '600', color: theme.primary },
 
-  instTexto: { fontSize: 15, color: colors.text, lineHeight: 24 },
+  instTexto: { fontSize: 15, color: theme.text, lineHeight: 24 },
 
   botonesContainer: { paddingHorizontal: 16, marginTop: 20, gap: 10 },
   btnAccion: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
   },
   btnAccionText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   btnAccionSec: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 14,
     paddingVertical: 13,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: theme.primary,
   },
-  btnAccionSecText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+  btnAccionSecText: { color: theme.primary, fontSize: 15, fontWeight: '600' },
   btnEliminar: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.card,
     borderRadius: 14,
     paddingVertical: 13,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: colors.danger,
+    borderColor: theme.danger,
   },
-  btnEliminarText: { color: colors.danger, fontSize: 15, fontWeight: '600' },
+  btnEliminarText: { color: theme.danger, fontSize: 15, fontWeight: '600' },
 
   bottomSpacer: { height: 24 },
 
   // Modales
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
     maxHeight: '90%',
   },
-  modalTitulo: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: colors.text },
-  label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 4, marginTop: 8 },
+  modalTitulo: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: theme.text },
+  label: { fontSize: 13, fontWeight: '600', color: theme.text, marginBottom: 4, marginTop: 8 },
   input: {
-    backgroundColor: colors.borderLight,
+    backgroundColor: theme.borderLight,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 15,
-    color: colors.text,
+    color: theme.text,
     marginBottom: 6,
   },
   textArea: { minHeight: 100, textAlignVertical: 'top' },
   row2: { flexDirection: 'row', gap: 8 },
   half: { flex: 1 },
   modalBotones: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  btnCancelar: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
-  btnGuardar: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center' },
+  btnCancelar: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center' },
+  btnGuardar: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: theme.primary, alignItems: 'center' },
   btnGuardarTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 
   // Confirmar eliminar
   confirmBox: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.card,
     margin: 40,
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
   },
-  confirmTitulo: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 8 },
-  confirmTexto: { fontSize: 15, color: colors.textSecondary, textAlign: 'center', marginBottom: 20 },
+  confirmTitulo: { fontSize: 20, fontWeight: 'bold', color: theme.text, marginBottom: 8 },
+  confirmTexto: { fontSize: 15, color: theme.textSecondary, textAlign: 'center', marginBottom: 20 },
   confirmBotones: { flexDirection: 'row', gap: 12, width: '100%' },
-  btnEliminarConfirm: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: colors.danger, alignItems: 'center' },
+  btnEliminarConfirm: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: theme.danger, alignItems: 'center' },
   btnEliminarConfirmText: { color: '#fff', fontWeight: 'bold' },
 });
+}
