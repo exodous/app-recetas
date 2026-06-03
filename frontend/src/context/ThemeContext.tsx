@@ -23,6 +23,7 @@ export interface ThemeColors {
   accentLight: string;
   warning: string;
   danger: string;
+  dangerLight: string;
   success: string;
 
   // Semantic
@@ -54,6 +55,7 @@ const lightTheme: ThemeColors = {
   accentLight: '#E3F2FD',
   warning: '#FFC107',
   danger: '#e74c3c',
+  dangerLight: '#fff0f0',
   success: '#4CAF50',
 
   headerBg: '#FF6B35',
@@ -84,6 +86,7 @@ const darkTheme: ThemeColors = {
   accentLight: '#1a2a3a',
   warning: '#FFD54F',
   danger: '#EF5350',
+  dangerLight: '#2a1a1a',
   success: '#66BB6A',
 
   headerBg: '#1e1e1e',

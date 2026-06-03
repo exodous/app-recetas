@@ -99,6 +99,16 @@ export async function crearIngrediente(ingrediente: any) {
   return data;
 }
 
+export async function actualizarIngrediente(id: string, ingrediente: any) {
+  const { data } = await api.put(`/ingredientes/${id}`, ingrediente);
+  return data;
+}
+
+export async function eliminarIngrediente(id: string) {
+  const { data } = await api.delete(`/ingredientes/${id}`);
+  return data;
+}
+
 // ============ DESCARGAS ============
 export async function descargarReceta(recetaId: string) {
   const { data } = await api.post(`/descargas/${recetaId}`);

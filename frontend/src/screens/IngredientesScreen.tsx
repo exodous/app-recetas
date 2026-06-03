@@ -41,6 +41,10 @@ export default function IngredientesScreen() {
   const [fPrecios, setFPrecios] = useState<any[]>([]);
   const [guardando, setGuardando] = useState(false);
 
+  // Estado para editar ingrediente existente
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [mostrarEditar, setMostrarEditar] = useState(false);
+
   // Autocomplete state
   const [sugerencias, setSugerencias] = useState<Ingrediente[]>([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
@@ -175,6 +179,79 @@ export default function IngredientesScreen() {
     }
   }
 
+  // Cargar datos de un ingrediente existente en el formulario para editar
+  function abrirEditar(ing: Ingrediente) {
+    setEditandoId(ing.id);
+    setFNombre(getNombre(ing.nombre));
+    setFNombreEn(ing.nombre.en || '');
+    setFUnidad(ing.unidadBase || 'g');
+    setFTipoId(ing.tipoId || '');
+    setFCalorias(ing.calorias != null ? String(ing.calorias) : '');
+    setFProteinas(ing.proteinas != null ? String(ing.proteinas) : '');
+    setFHidratos(ing.hidratos != null ? String(ing.hidratos) : '');
+    setFGrasas(ing.grasas != null ? String(ing.grasas) : '');
+    setFFibra(ing.fibra != null ? String(ing.fibra) : '');
+    setFPrecios(ing.precios?.map(p => ({
+      supermercado: p.supermercado,
+      precio: String(p.precio),
+      unidad: p.unidad,
+    })) || []);
+    setExpandido(null);
+    setMostrarEditar(true);
+  }
+
+  async function guardarEdicion() {
+    if (!fNombre.trim() || !editandoId) return;
+    setGuardando(true);
+    try {
+      const data: any = {
+        nombre: { es: fNombre, en: fNombreEn || fNombre },
+        unidadBase: fUnidad,
+        tipoId: fTipoId || undefined,
+        calorias: fCalorias ? parseFloat(fCalorias) : undefined,
+        proteinas: fProteinas ? parseFloat(fProteinas) : undefined,
+        hidratos: fHidratos ? parseFloat(fHidratos) : undefined,
+        grasas: fGrasas ? parseFloat(fGrasas) : undefined,
+        fibra: fFibra ? parseFloat(fFibra) : undefined,
+        precios: fPrecios.filter(p => p.precio).map(p => ({
+          supermercado: p.supermercado,
+          precio: parseFloat(p.precio),
+          unidad: p.unidad,
+        })),
+      };
+      await api.actualizarIngrediente(editandoId, data);
+      setMostrarEditar(false);
+      resetForm();
+      cargar();
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.error || 'Error al guardar');
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function eliminarIngrediente(ingId: string) {
+    Alert.alert(
+      'Eliminar ingrediente',
+      '¿Estás seguro? Esto puede afectar a recetas que lo usen.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.eliminarIngrediente(ingId);
+              cargar();
+            } catch (err: any) {
+              Alert.alert('Error', err.response?.data?.error || 'Error al eliminar');
+            }
+          },
+        },
+      ]
+    );
+  }
+
   function preciosPrincipales(ing: Ingrediente) {
     if (!ing.precios) return [];
     return ing.precios.filter(p => SUPERMERCADOS_PRINCIPALES.includes(p.supermercado));
@@ -307,6 +384,15 @@ export default function IngredientesScreen() {
                 </View>
               );
             })()}
+            {/* Botones editar/eliminar */}
+            <View style={styles.botonesRow}>
+              <TouchableOpacity style={[styles.btnEditar, { backgroundColor: theme.accentLight, borderColor: theme.accent }]} onPress={() => abrirEditar(item)}>
+                <Text style={[styles.btnEditarTexto, { color: theme.accent }]}>✏️ Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.btnEliminar, { backgroundColor: theme.dangerLight || '#fff0f0', borderColor: theme.danger }]} onPress={() => eliminarIngrediente(item.id)}>
+                <Text style={[styles.btnEliminarTexto, { color: theme.danger }]}>🗑 Eliminar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
@@ -607,6 +693,103 @@ export default function IngredientesScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal editar ingrediente - reutiliza el mismo formulario */}
+      <Modal visible={mostrarEditar} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={[styles.modalTitulo, { color: theme.text }]}>✏️ Editar ingrediente</Text>
+
+              <Text style={[styles.label, { color: theme.text }]}>🇪🇸 Nombre *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
+                value={fNombre}
+                onChangeText={setFNombre}
+                placeholder="Tomate"
+                placeholderTextColor={theme.textLight}
+              />
+
+              <Text style={[styles.label, { color: theme.text }]}>🇬🇧 Nombre (EN)</Text>
+              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={fNombreEn} onChangeText={setFNombreEn} placeholder="Tomato" placeholderTextColor={theme.textLight} />
+
+              <Text style={[styles.label, { color: theme.text }]}>Tipo</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tiposRow}>
+                {tipos.map(tipo => (
+                  <TouchableOpacity key={tipo.id} style={[styles.tipoChip, { backgroundColor: fTipoId === tipo.id ? theme.chipActiveBg : theme.chipBg }]} onPress={() => setFTipoId(fTipoId === tipo.id ? '' : tipo.id)}>
+                    <Text style={{ color: fTipoId === tipo.id ? theme.textWhite : theme.text }}>{tipo.icono} {getNombre(tipo.nombre)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={[styles.label, { color: theme.text }]}>Unidad base</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tiposRow}>
+                {['g', 'kg', 'ml', 'l', 'ud', 'taza', 'cucharada', 'pizca'].map(u => (
+                  <TouchableOpacity key={u} style={[styles.tipoChip, { backgroundColor: fUnidad === u ? theme.chipActiveBg : theme.chipBg }]} onPress={() => setFUnidad(u)}>
+                    <Text style={{ color: fUnidad === u ? theme.textWhite : theme.text }}>{u}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={[styles.label, { color: theme.text }]}>📊 Valor nutricional (por 100g)</Text>
+              <View style={styles.row2}>
+                <View style={styles.half}>
+                  <Text style={[styles.sublabel, { color: theme.textSecondary }]}>Kcal</Text>
+                  <TextInput style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={fCalorias} onChangeText={setFCalorias} keyboardType="numeric" placeholder="18" placeholderTextColor={theme.textLight} />
+                </View>
+                <View style={styles.half}>
+                  <Text style={[styles.sublabel, { color: theme.textSecondary }]}>Proteínas (g)</Text>
+                  <TextInput style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={fProteinas} onChangeText={setFProteinas} keyboardType="numeric" placeholder="0.9" placeholderTextColor={theme.textLight} />
+                </View>
+              </View>
+              <View style={styles.row2}>
+                <View style={styles.half}>
+                  <Text style={[styles.sublabel, { color: theme.textSecondary }]}>Hidratos (g)</Text>
+                  <TextInput style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={fHidratos} onChangeText={setFHidratos} keyboardType="numeric" placeholder="3.9" placeholderTextColor={theme.textLight} />
+                </View>
+                <View style={styles.half}>
+                  <Text style={[styles.sublabel, { color: theme.textSecondary }]}>Grasas</Text>
+                  <TextInput style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={fGrasas} onChangeText={setFGrasas} keyboardType="numeric" placeholder="0.2" placeholderTextColor={theme.textLight} />
+                </View>
+              </View>
+              <Text style={[styles.sublabel, { color: theme.textSecondary }]}>Fibra (g)</Text>
+              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={fFibra} onChangeText={setFFibra} keyboardType="numeric" placeholder="1.2" placeholderTextColor={theme.textLight} />
+
+              <Text style={[styles.label, { color: theme.text }]}>🛒 Precios</Text>
+              {fPrecios.map((p, i) => (
+                <View key={i} style={[styles.precioForm, { backgroundColor: theme.inputBg }]}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.supermercadosRow}>
+                    {SUPERMERCADOS.map(s => (
+                      <TouchableOpacity key={s.value} style={[styles.supChip, { backgroundColor: p.supermercado === s.value ? theme.chipActiveBg : theme.chipBg }]} onPress={() => updatePrecio(i, 'supermercado', s.value)}>
+                        <Text style={[styles.supText, { color: p.supermercado === s.value ? theme.textWhite : theme.text }]}>{s.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                  <View style={styles.row2}>
+                    <TextInput style={[styles.input, { flex: 1, backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]} value={p.precio} onChangeText={v => updatePrecio(i, 'precio', v)} placeholder="2.19" placeholderTextColor={theme.textLight} keyboardType="numeric" />
+                    <TextInput style={[styles.input, { width: 60, backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]} value={p.unidad} onChangeText={v => updatePrecio(i, 'unidad', v)} placeholder="kg" placeholderTextColor={theme.textLight} />
+                    <TouchableOpacity onPress={() => removePrecio(i)} style={styles.btnRemove}>
+                      <Text style={{ color: theme.danger }}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+              <TouchableOpacity style={[styles.btnAddPrecio, { borderColor: theme.primary }]} onPress={addPrecio}>
+                <Text style={[styles.btnAddPrecioTexto, { color: theme.primary }]}>+ Añadir precio</Text>
+              </TouchableOpacity>
+
+              <View style={styles.modalBotones}>
+                <TouchableOpacity style={[styles.btnCancelar, { borderColor: theme.border }]} onPress={() => { setMostrarEditar(false); setEditandoId(null); resetForm(); }}>
+                  <Text style={{ color: theme.text }}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.btnGuardar, { backgroundColor: theme.primary }]} onPress={guardarEdicion} disabled={guardando}>
+                  {guardando ? <ActivityIndicator color={theme.textWhite} size="small" /> : <Text style={[styles.btnGuardarTexto, { color: theme.textWhite }]}>Guardar</Text>}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -707,9 +890,10 @@ const styles = StyleSheet.create({
     marginTop: 1,
     fontWeight: '500',
   },
-  sugerenciasCerrar: {
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderTopWidth: 1,
-  },
+  sugerenciasCerrar: { paddingVertical: 8, alignItems: 'center', borderTopWidth: 1 },
+  botonesRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#eee' },
+  btnEditar: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', borderWidth: 1 },
+  btnEditarTexto: { fontSize: 13, fontWeight: '600' },
+  btnEliminar: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', borderWidth: 1 },
+  btnEliminarTexto: { fontSize: 13, fontWeight: '600' },
 });
