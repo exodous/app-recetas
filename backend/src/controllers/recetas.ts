@@ -145,16 +145,18 @@ export async function actualizar(req: AuthRequest, res: Response, next: NextFunc
       await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
     }
 
+    console.log('📥 Actualizando receta:', { id, nombre: !!nombre, instrucciones: !!instrucciones, tiempoMin, porciones, comidaTipo });
+
     const receta = await prisma.receta.update({
-      where: { id },
+      where: { id: req.params.id },
       data: {
         ...(nombre && { nombre }),
         ...(instrucciones && { instrucciones }),
         ...(categoriaId && { categoriaId }),
-        ...(tiempoMin && { tiempoMin }),
-        ...(porciones && { porciones }),
+        ...(tiempoMin !== undefined && { tiempoMin }),
+        ...(porciones !== undefined && { porciones }),
         ...(publica !== undefined && { publica }),
-        ...(comidaTipo !== undefined && { comidaTipo }),
+        ...(comidaTipo !== undefined && { comidaTipo: { set: comidaTipo } }),
         ...(ingredientes && {
           ingredientes: {
             create: ingredientes.map((ing: any) => ({
@@ -173,6 +175,7 @@ export async function actualizar(req: AuthRequest, res: Response, next: NextFunc
       },
     });
 
+    console.log('✅ Receta actualizada:', receta.id);
     res.json(receta);
   } catch (err) {
     next(err);
