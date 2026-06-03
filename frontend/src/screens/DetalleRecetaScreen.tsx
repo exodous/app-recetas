@@ -97,23 +97,30 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
   }
 
   async function guardarEdicion() {
+    console.log('📤 Guardando edición receta:', { id, editNombre, editInst, editTiempo, editPorciones, editComidaTipo });
     if (!editNombre.trim() || !editInst.trim()) {
       Alert.alert('Error', 'Nombre e instrucciones son obligatorios');
       return;
     }
+    if (!id) {
+      Alert.alert('Error', 'ID de receta no encontrado');
+      return;
+    }
     setGuardando(true);
     try {
-      await actualizarReceta(id, {
+      const result = await actualizarReceta(id, {
         nombre: { es: editNombre, en: editNombreEn || editNombre },
         instrucciones: { es: editInst, en: editInstEn || editInst },
         tiempoMin: editTiempo ? parseInt(editTiempo) : null,
         porciones: editPorciones ? parseInt(editPorciones) : null,
         comidaTipo: editComidaTipo,
       });
+      console.log('✅ Receta actualizada:', result);
       setEditando(false);
       cargarReceta();
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.error || 'Error al guardar');
+      console.error('❌ Error guardando receta:', err);
+      Alert.alert('Error', err.response?.data?.error || err.message || 'Error al guardar');
     } finally {
       setGuardando(false);
     }
