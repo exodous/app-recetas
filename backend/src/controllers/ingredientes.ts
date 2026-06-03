@@ -105,7 +105,13 @@ export async function actualizar(req: AuthRequest, res: Response, next: NextFunc
     const { nombre, unidadBase, tipoId, calorias, proteinas, hidratos, grasas, fibra, precios } = req.body;
 
     const existente = await prisma.ingrediente.findFirst({
-      where: { id, creadoPor: req.usuarioId, esSistema: false },
+      where: {
+        id,
+        OR: [
+          { creadoPor: req.usuarioId },
+          { esSistema: true },
+        ],
+      },
     });
     if (!existente) throw new AppError('Ingrediente no encontrado o no editable', 404);
 
@@ -124,8 +130,39 @@ export async function actualizar(req: AuthRequest, res: Response, next: NextFunc
       include: { precios: true, tipo: true },
     });
 
-    res.json(ingrediente);
+    // Si se envían precios, actualizarlos
+    if (precios && Array.isArray(precios)) {
+      // Eliminar precios existentes y crear los nuevos
+      await prisma.precioIngrediente.deleteMany({ where: { ingredienteId: id } });
+      for (const precio of precios) {
+        await prisma.precioIngrediente.upsert({
+          where: {
+            ingredienteId_supermercado_unidad: {
+              ingredienteId: id,
+              supermercado: precio.supermercado,
+              unidad: precio.unidad,
+            },
+          },
+          update: { precio: precio.precio, fechaActualizacion: new Date() },
+          create: {
+            ingredienteId: id,
+            supermercado: precio.supermercado,
+            precio: precio.precio,
+            unidad: precio.unidad,
+          },
+        });
+      }
+    }
+
+    // Volver a obtener el ingrediente con precios actualizados
+    const actualizado = await prisma.ingrediente.findUnique({
+      where: { id },
+      include: { precios: true, tipo: true },
+    });
+
+    res.json(actualizado);
   } catch (err) {
+    console.error('❌ Error actualizando ingrediente:', err.message);
     next(err);
   }
 }

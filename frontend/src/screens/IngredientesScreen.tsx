@@ -219,12 +219,16 @@ export default function IngredientesScreen() {
           unidad: p.unidad,
         })),
       };
-      await api.actualizarIngrediente(editandoId, data);
+      console.log('📤 Guardando edición:', editandoId, JSON.stringify(data));
+      const resultado = await api.actualizarIngrediente(editandoId, data);
+      console.log('✅ Ingrediente actualizado:', resultado);
       setMostrarEditar(false);
+      setEditandoId(null);
       resetForm();
       cargar();
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.error || 'Error al guardar');
+      console.error('❌ Error guardando edición:', err);
+      Alert.alert('Error', err.response?.data?.error || err.message || 'Error al guardar');
     } finally {
       setGuardando(false);
     }
