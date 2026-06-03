@@ -69,6 +69,7 @@ export interface Receta {
   publica: boolean;
   createdAt: string;
   updatedAt: string;
+  comidaTipo?: ('almuerzo' | 'cena')[];
   categoria?: Categoria;
   ingredientes?: RecetaIngrediente[];
   usuario?: { nombre: string };

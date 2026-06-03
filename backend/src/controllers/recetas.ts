@@ -92,7 +92,7 @@ export async function obtener(req: AuthRequest, res: Response, next: NextFunctio
 // Crear receta
 export async function crear(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { nombre, instrucciones, categoriaId, tiempoMin, porciones, publica, ingredientes } = req.body;
+    const { nombre, instrucciones, categoriaId, tiempoMin, porciones, publica, ingredientes, comidaTipo } = req.body;
 
     if (!nombre || !instrucciones || !categoriaId || !ingredientes?.length) {
       throw new AppError('Faltan campos obligatorios', 400);
@@ -107,6 +107,7 @@ export async function crear(req: AuthRequest, res: Response, next: NextFunction)
         tiempoMin,
         porciones,
         publica: publica || false,
+        comidaTipo: comidaTipo || ['almuerzo', 'cena'],
         ingredientes: {
           create: ingredientes.map((ing: any) => ({
             ingredienteId: ing.ingredienteId,
@@ -133,15 +134,13 @@ export async function crear(req: AuthRequest, res: Response, next: NextFunction)
 // Actualizar receta
 export async function actualizar(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
-    const { nombre, instrucciones, categoriaId, tiempoMin, porciones, publica, ingredientes } = req.body;
+    const { nombre, instrucciones, categoriaId, tiempoMin, porciones, publica, ingredientes, comidaTipo } = req.body;
 
     const existente = await prisma.receta.findFirst({
       where: { id, usuarioId: req.usuarioId },
     });
     if (!existente) throw new AppError('Receta no encontrada o sin permisos', 404);
 
-    // Si se envían ingredientes, eliminamos los anteriores y creamos los nuevos
     if (ingredientes) {
       await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
     }
@@ -155,6 +154,7 @@ export async function actualizar(req: AuthRequest, res: Response, next: NextFunc
         ...(tiempoMin && { tiempoMin }),
         ...(porciones && { porciones }),
         ...(publica !== undefined && { publica }),
+        ...(comidaTipo !== undefined && { comidaTipo }),
         ...(ingredientes && {
           ingredientes: {
             create: ingredientes.map((ing: any) => ({

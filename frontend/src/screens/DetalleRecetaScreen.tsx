@@ -32,6 +32,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
   const [editInstEn, setEditInstEn] = useState('');
   const [editTiempo, setEditTiempo] = useState('');
   const [editPorciones, setEditPorciones] = useState('');
+  const [editComidaTipo, setEditComidaTipo] = useState<string[]>([]);
 
   const cargarReceta = useCallback(async () => {
     setLoading(true);
@@ -70,6 +71,19 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
     return { cal: Math.round(cal), prot: Math.round(prot), hc: Math.round(hc), gras: Math.round(gras), fib: Math.round(fib) };
   }
 
+  function calcularNutricionPorPorcion() {
+    const total = calcularNutricion();
+    if (!total) return null;
+    const p = receta?.porciones && receta.porciones > 0 ? receta.porciones : 1;
+    return {
+      cal: Math.round(total.cal / p),
+      prot: Math.round(total.prot / p),
+      hc: Math.round(total.hc / p),
+      gras: Math.round(total.gras / p),
+      fib: Math.round(total.fib / p),
+    };
+  }
+
   function abrirEditar() {
     if (!receta) return;
     setEditNombre(receta.nombre.es);
@@ -78,6 +92,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
     setEditInstEn((receta.instrucciones as any).en || '');
     setEditTiempo(receta.tiempoMin?.toString() || '');
     setEditPorciones(receta.porciones?.toString() || '');
+    setEditComidaTipo(receta.comidaTipo || []);
     setEditando(true);
   }
 
@@ -93,6 +108,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
         instrucciones: { es: editInst, en: editInstEn || editInst },
         tiempoMin: editTiempo ? parseInt(editTiempo) : null,
         porciones: editPorciones ? parseInt(editPorciones) : null,
+        comidaTipo: editComidaTipo,
       });
       setEditando(false);
       cargarReceta();
@@ -138,6 +154,7 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
 
   const esPropietario = receta && usuario && receta.usuarioId === usuario.id;
   const nutricion = calcularNutricion();
+  const nutricionPorPorcion = calcularNutricionPorPorcion();
 
   if (loading) {
     return (
@@ -175,6 +192,17 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
               <Text style={s.catBadgeText}>
                 {receta.categoria.icono} {getNombre(receta.categoria.nombre)}
               </Text>
+            </View>
+          )}
+          {receta.comidaTipo && receta.comidaTipo.length > 0 && (
+            <View style={s.mealTypeRow}>
+              {receta.comidaTipo.map((tipo) => (
+                <View key={tipo} style={s.mealTypeBadge}>
+                  <Text style={s.mealTypeBadgeText}>
+                    {tipo === 'almuerzo' ? '☀️ Almuerzo' : '🌙 Cena'}
+                  </Text>
+                </View>
+              ))}
             </View>
           )}
           <View style={s.metaRow}>
@@ -220,6 +248,35 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
                 <Text style={s.nutLabel}>Fibra</Text>
               </View>
             </View>
+
+            {receta.porciones && receta.porciones > 0 && nutricionPorPorcion && (
+              <>
+                <View style={s.nutricionDivider} />
+                <Text style={s.nutricionTitulo}>📊 Por porción ({receta.porciones} pax)</Text>
+                <View style={s.nutricionGrid}>
+                  <View style={s.nutItem}>
+                    <Text style={s.nutValor}>{nutricionPorPorcion.cal}</Text>
+                    <Text style={s.nutLabel}>kcal</Text>
+                  </View>
+                  <View style={s.nutItem}>
+                    <Text style={[s.nutValor, { color: theme.secondary }]}>{nutricionPorPorcion.prot}g</Text>
+                    <Text style={s.nutLabel}>Proteínas</Text>
+                  </View>
+                  <View style={s.nutItem}>
+                    <Text style={[s.nutValor, { color: theme.accent }]}>{nutricionPorPorcion.hc}g</Text>
+                    <Text style={s.nutLabel}>Hidratos</Text>
+                  </View>
+                  <View style={s.nutItem}>
+                    <Text style={[s.nutValor, { color: theme.warning }]}>{nutricionPorPorcion.gras}g</Text>
+                    <Text style={s.nutLabel}>Grasas</Text>
+                  </View>
+                  <View style={s.nutItem}>
+                    <Text style={[s.nutValor, { color: '#9C27B0' }]}>{nutricionPorPorcion.fib}g</Text>
+                    <Text style={s.nutLabel}>Fibra</Text>
+                  </View>
+                </View>
+              </>
+            )}
           </View>
         )}
 
@@ -298,6 +355,28 @@ export default function DetalleRecetaScreen({ route, navigation }: any) {
                   <Text style={s.label}>🍽 Porciones</Text>
                   <TextInput style={s.input} value={editPorciones} onChangeText={setEditPorciones} keyboardType="numeric" />
                 </View>
+              </View>
+
+              <Text style={s.label}>🕐 Tipo de comida</Text>
+              <View style={s.toggleRow}>
+                {(['almuerzo', 'cena'] as const).map((tipo) => {
+                  const selected = editComidaTipo.includes(tipo);
+                  return (
+                    <TouchableOpacity
+                      key={tipo}
+                      style={[s.toggleBtn, selected && s.toggleBtnActive]}
+                      onPress={() => {
+                        setEditComidaTipo((prev) =>
+                          selected ? prev.filter((t) => t !== tipo) : [...prev, tipo]
+                        );
+                      }}
+                    >
+                      <Text style={[s.toggleBtnText, selected && s.toggleBtnTextActive]}>
+                        {tipo === 'almuerzo' ? '☀️ Almuerzo' : '🌙 Cena'}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
               <Text style={s.label}>🇪🇸 Instrucciones *</Text>
@@ -388,6 +467,15 @@ return StyleSheet.create({
   },
   metaText: { color: '#fff', fontSize: 13, fontWeight: '500' },
 
+  mealTypeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  mealTypeBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  mealTypeBadgeText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+
   nutricionCard: {
     backgroundColor: theme.card,
     marginHorizontal: 16,
@@ -401,6 +489,7 @@ return StyleSheet.create({
     elevation: 3,
   },
   nutricionTitulo: { fontSize: 15, fontWeight: '600', color: theme.text, marginBottom: 12 },
+  nutricionDivider: { height: 1, backgroundColor: theme.borderLight, marginVertical: 14 },
   nutricionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   nutItem: {
     flex: 1,
@@ -491,6 +580,30 @@ return StyleSheet.create({
   btnCancelar: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center' },
   btnGuardar: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: theme.primary, alignItems: 'center' },
   btnGuardarTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+
+  toggleRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    alignItems: 'center',
+    backgroundColor: theme.borderLight,
+  },
+  toggleBtnActive: {
+    borderColor: theme.primary,
+    backgroundColor: theme.primary + '20',
+  },
+  toggleBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.textSecondary,
+  },
+  toggleBtnTextActive: {
+    color: theme.primary,
+  },
 
   // Confirmar eliminar
   confirmBox: {

@@ -132,7 +132,14 @@ export default function HomeScreen({ navigation }: any) {
             <TouchableOpacity style={s.recetaCard} onPress={() => navigation.navigate('DetalleReceta', { id: item.id })} activeOpacity={0.7}>
               <View style={s.recetaHeader}>
                 <View style={s.recetaHeaderLeft}>
-                  <Text style={s.recetaNombre}>{getNombre(item.nombre)}</Text>
+                  <View style={s.recetaNombreRow}>
+                    <Text style={s.recetaNombre}>{getNombre(item.nombre)}</Text>
+                    {item.comidaTipo && item.comidaTipo.length > 0 && (
+                      <Text style={s.comidaTipoBadge}>
+                        {item.comidaTipo.includes('almuerzo') && item.comidaTipo.includes('cena') ? '☀️🌙' : item.comidaTipo.includes('almuerzo') ? '☀️' : '🌙'}
+                      </Text>
+                    )}
+                  </View>
                   {item.categoria && (
                     <View style={s.categoriaBadge}>
                       <Text style={s.categoriaBadgeText}>{item.categoria.icono} {getNombre(item.categoria.nombre)}</Text>
@@ -202,6 +209,8 @@ function styles(theme: ThemeColors) {
     recetaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
     recetaHeaderLeft: { flex: 1 },
     recetaNombre: { fontSize: 17, fontWeight: 'bold', color: c.text, marginBottom: 6 },
+    recetaNombreRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+    comidaTipoBadge: { fontSize: 14 },
     categoriaBadge: { backgroundColor: c.primaryLight, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
     categoriaBadgeText: { fontSize: 12, color: c.primary, fontWeight: '600' },
     publicaBadge: { fontSize: 16, marginLeft: 8 },

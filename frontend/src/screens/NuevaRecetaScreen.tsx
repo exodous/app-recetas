@@ -29,6 +29,7 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
   const [seleccionado, setSeleccionado] = useState<Ingrediente | null>(null);
   const [cantidad, setCantidad] = useState('');
   const [unidad, setUnidad] = useState('g');
+  const [fComidaTipo, setFComidaTipo] = useState<'almuerzo' | 'cena' | 'ambos'>('ambos');
 
   // Resetear campos y cargar datos al entrar a la pantalla
   useFocusEffect(
@@ -51,6 +52,7 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
       setSeleccionado(null);
       setCantidad('');
       setUnidad('g');
+      setFComidaTipo('ambos');
 
       // Cargar categorías e ingredientes
       (async () => {
@@ -129,6 +131,7 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
         categoriaId,
         tiempoMin: tiempoMin ? parseInt(tiempoMin) : undefined,
         porciones: porciones ? parseInt(porciones) : undefined,
+        comidaTipo: fComidaTipo === 'ambos' ? ['almuerzo', 'cena'] : [fComidaTipo],
         ingredientes: ingredientes.map((ing) => ({
           ingredienteId: ing.ingredienteId,
           cantidad: ing.cantidad,
@@ -198,6 +201,31 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
             <Text style={styles.label}>{t.receta.porciones}</Text>
             <TextInput style={styles.input} keyboardType="numeric" value={porciones} onChangeText={setPorciones} placeholder="4" />
           </View>
+        </View>
+
+        {/* Tipo de comida */}
+        <Text style={styles.label}>Tipo de comida</Text>
+        <View style={styles.comidaTipoRow}>
+          <TouchableOpacity
+            style={[
+              styles.comidaTipoBtn,
+              (fComidaTipo === 'almuerzo' || fComidaTipo === 'ambos') && styles.comidaTipoBtnActiva,
+              fComidaTipo === 'ambos' && styles.comidaTipoBtnAmbos,
+            ]}
+            onPress={() => setFComidaTipo(fComidaTipo === 'cena' ? 'ambos' : fComidaTipo === 'ambos' ? 'cena' : 'almuerzo')}
+          >
+            <Text style={[styles.comidaTipoBtnTexto, (fComidaTipo === 'almuerzo' || fComidaTipo === 'ambos') && styles.comidaTipoBtnTextoActiva]}>☀️ Almuerzo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.comidaTipoBtn,
+              (fComidaTipo === 'cena' || fComidaTipo === 'ambos') && styles.comidaTipoBtnActiva,
+              fComidaTipo === 'ambos' && styles.comidaTipoBtnAmbos,
+            ]}
+            onPress={() => setFComidaTipo(fComidaTipo === 'almuerzo' ? 'ambos' : fComidaTipo === 'ambos' ? 'almuerzo' : 'cena')}
+          >
+            <Text style={[styles.comidaTipoBtnTexto, (fComidaTipo === 'cena' || fComidaTipo === 'ambos') && styles.comidaTipoBtnTextoActiva]}>🌙 Cena</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Ingredientes */}
@@ -357,6 +385,12 @@ const styles = StyleSheet.create({
   catBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', marginRight: 8, borderWidth: 1, borderColor: '#ddd' },
   catBtnActiva: { backgroundColor: '#FF6B35', borderColor: '#FF6B35' },
   catBtnTexto: { color: '#333', fontSize: 13 },
+  comidaTipoRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+  comidaTipoBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', alignItems: 'center', justifyContent: 'center' },
+  comidaTipoBtnActiva: { backgroundColor: '#FF6B35', borderColor: '#FF6B35' },
+  comidaTipoBtnAmbos: { backgroundColor: '#FF8C5A', borderColor: '#FF8C5A' },
+  comidaTipoBtnTexto: { fontSize: 15, fontWeight: '600', color: '#333' },
+  comidaTipoBtnTextoActiva: { color: '#fff' },
   ingItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 12, borderRadius: 8, marginBottom: 6, borderLeftWidth: 3, borderLeftColor: '#FF6B35' },
   ingTexto: { fontSize: 15, color: '#333', flex: 1 },
   eliminar: { color: '#e74c3c', fontSize: 18, paddingHorizontal: 8 },
