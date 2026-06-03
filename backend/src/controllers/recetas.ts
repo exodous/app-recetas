@@ -134,7 +134,10 @@ export async function crear(req: AuthRequest, res: Response, next: NextFunction)
 // Actualizar receta
 export async function actualizar(req: AuthRequest, res: Response, next: NextFunction) {
   try {
+    const { id } = req.params;
     const { nombre, instrucciones, categoriaId, tiempoMin, porciones, publica, ingredientes, comidaTipo } = req.body;
+
+    console.log('📥 Actualizando receta:', { id, nombre: !!nombre, instrucciones: !!instrucciones, tiempoMin, porciones, comidaTipo });
 
     const existente = await prisma.receta.findFirst({
       where: { id, usuarioId: req.usuarioId },
@@ -145,10 +148,8 @@ export async function actualizar(req: AuthRequest, res: Response, next: NextFunc
       await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
     }
 
-    console.log('📥 Actualizando receta:', { id, nombre: !!nombre, instrucciones: !!instrucciones, tiempoMin, porciones, comidaTipo });
-
     const receta = await prisma.receta.update({
-      where: { id: req.params.id },
+      where: { id },
       data: {
         ...(nombre && { nombre }),
         ...(instrucciones && { instrucciones }),
