@@ -16,6 +16,7 @@ const CATEGORIAS = [
   { nombre: { es: 'Desayunos', en: 'Breakfasts' }, slug: 'desayunos', icono: '🍳', orden: 10 },
   { nombre: { es: 'Pan y masas', en: 'Bread & Doughs' }, slug: 'pan', icono: '🍞', orden: 11 },
   { nombre: { es: 'Bebidas', en: 'Drinks' }, slug: 'bebidas', icono: '🥤', orden: 12 },
+  { nombre: { es: 'Otro', en: 'Other' }, slug: 'otro', icono: '🍽️', orden: 13 },
 ];
 
 const TIPOS_INGREDIENTE = [

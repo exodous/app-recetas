@@ -7,6 +7,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as api from '../services/api';
 import { Categoria, Ingrediente } from '../types';
 
+const SUPERMERCADOS = ['mercadona', 'lidl', 'carrefour', 'dia', 'aldi', 'eci', 'hiperdino', 'bonpreu', 'condis', 'eroski', 'bm', 'alcampo'];
+
 export default function NuevaRecetaScreen({ navigation, route }: any) {
   const { t, lang } = useI18n();
   const [nombre, setNombre] = useState('');
@@ -22,14 +24,25 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
   const [mostrarIngredientes, setMostrarIngredientes] = useState(false);
   const [mostrarNuevoIng, setMostrarNuevoIng] = useState(false);
   const [buscarIng, setBuscarIng] = useState('');
-  const [nuevoIngNombre, setNuevoIngNombre] = useState('');
-  const [nuevoIngNombreEn, setNuevoIngNombreEn] = useState('');
-  const [nuevoIngUnidad, setNuevoIngUnidad] = useState('g');
   const [cargando, setCargando] = useState(false);
   const [seleccionado, setSeleccionado] = useState<Ingrediente | null>(null);
   const [cantidad, setCantidad] = useState('');
   const [unidad, setUnidad] = useState('g');
   const [fComidaTipo, setFComidaTipo] = useState<'almuerzo' | 'cena' | 'ambos'>('ambos');
+
+  // Modal nuevo ingrediente - campos
+  const [nuevoIngNombre, setNuevoIngNombre] = useState('');
+  const [nuevoIngNombreEn, setNuevoIngNombreEn] = useState('');
+  const [nuevoIngUnidad, setNuevoIngUnidad] = useState('g');
+  const [tiposIng, setTiposIng] = useState<any[]>([]);
+  const [nuevoIngTipoId, setNuevoIngTipoId] = useState('');
+  const [nuevoIngCalorias, setNuevoIngCalorias] = useState('');
+  const [nuevoIngProteinas, setNuevoIngProteinas] = useState('');
+  const [nuevoIngHidratos, setNuevoIngHidratos] = useState('');
+  const [nuevoIngGrasas, setNuevoIngGrasas] = useState('');
+  const [nuevoIngFibra, setNuevoIngFibra] = useState('');
+  const [nuevoIngPrecios, setNuevoIngPrecios] = useState<any[]>([]);
+  const [mostrarDatosExtra, setMostrarDatosExtra] = useState(false);
 
   // Resetear campos y cargar datos al entrar a la pantalla
   useFocusEffect(
@@ -45,21 +58,24 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
       setMostrarIngredientes(false);
       setMostrarNuevoIng(false);
       setBuscarIng('');
-      setNuevoIngNombre('');
-      setNuevoIngNombreEn('');
-      setNuevoIngUnidad('g');
       setCargando(false);
       setSeleccionado(null);
       setCantidad('');
       setUnidad('g');
       setFComidaTipo('ambos');
+      resetNuevoIng();
 
-      // Cargar categorías e ingredientes
+      // Cargar categorías, ingredientes y tipos
       (async () => {
         try {
-          const [cats, ings] = await Promise.all([api.getCategorias(), api.getIngredientes()]);
+          const [cats, ings, tipos] = await Promise.all([
+            api.getCategorias(),
+            api.getIngredientes(),
+            api.getTiposIngrediente(),
+          ]);
           setCategorias(cats);
           setListaIngredientes(ings);
+          setTiposIng(tipos);
         } catch (err) {
           console.error('Error cargando datos:', err);
         }
@@ -67,8 +83,22 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
     }, [])
   );
 
+  function resetNuevoIng() {
+    setNuevoIngNombre('');
+    setNuevoIngNombreEn('');
+    setNuevoIngUnidad('g');
+    setNuevoIngTipoId('');
+    setNuevoIngCalorias('');
+    setNuevoIngProteinas('');
+    setNuevoIngHidratos('');
+    setNuevoIngGrasas('');
+    setNuevoIngFibra('');
+    setNuevoIngPrecios([]);
+    setMostrarDatosExtra(false);
+  }
+
   function getNombre(obj: { es: string; en: string }) {
-    return obj[lang] || obj.es;
+    return obj?.[lang] || obj?.es || '';
   }
 
   function abrirSelectorIngrediente() {
@@ -99,19 +129,53 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
     setIngredientes(ingredientes.filter((_, i) => i !== index));
   }
 
+  function abrirModalNuevoIngrediente() {
+    resetNuevoIng();
+    setMostrarNuevoIng(true);
+  }
+
+  function anadirPrecioIng() {
+    setNuevoIngPrecios([...nuevoIngPrecios, { supermercado: 'mercadona', precio: '', unidad: nuevoIngUnidad }]);
+  }
+
+  function quitarPrecioIng(index: number) {
+    setNuevoIngPrecios(nuevoIngPrecios.filter((_, i) => i !== index));
+  }
+
+  function actualizarPrecioIng(index: number, campo: string, valor: string) {
+    const copia = [...nuevoIngPrecios];
+    copia[index] = { ...copia[index], [campo]: valor };
+    setNuevoIngPrecios(copia);
+  }
+
   async function crearIngrediente() {
     if (!nuevoIngNombre.trim()) return;
     try {
-      const nuevo = await api.crearIngrediente({
+      const preciosLimpios = nuevoIngPrecios
+        .filter((p) => p.supermercado && p.precio)
+        .map((p) => ({
+          supermercado: p.supermercado,
+          precio: parseFloat(p.precio),
+          unidad: p.unidad || nuevoIngUnidad,
+        }));
+
+      const payload: any = {
         nombre: { es: nuevoIngNombre, en: nuevoIngNombreEn || nuevoIngNombre },
         unidadBase: nuevoIngUnidad,
-      });
+        ...(nuevoIngTipoId ? { tipoId: nuevoIngTipoId } : {}),
+        ...(nuevoIngCalorias !== '' ? { calorias: parseFloat(nuevoIngCalorias) } : {}),
+        ...(nuevoIngProteinas !== '' ? { proteinas: parseFloat(nuevoIngProteinas) } : {}),
+        ...(nuevoIngHidratos !== '' ? { hidratos: parseFloat(nuevoIngHidratos) } : {}),
+        ...(nuevoIngGrasas !== '' ? { grasas: parseFloat(nuevoIngGrasas) } : {}),
+        ...(nuevoIngFibra !== '' ? { fibra: parseFloat(nuevoIngFibra) } : {}),
+        ...(preciosLimpios.length ? { precios: preciosLimpios } : {}),
+      };
+
+      const nuevo = await api.crearIngrediente(payload);
       setListaIngredientes([...listaIngredientes, nuevo]);
       setSeleccionado(nuevo);
       setUnidad(nuevoIngUnidad);
       setMostrarNuevoIng(false);
-      setNuevoIngNombre('');
-      setNuevoIngNombreEn('');
     } catch (err: any) {
       Alert.alert(t.common.error, err.response?.data?.error || 'Error');
     }
@@ -124,7 +188,6 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
     }
     setCargando(true);
     try {
-      console.log('📤 Enviando receta:', { nombre, instrucciones, categoriaId, tiempoMin, porciones, ingredientes });
       const resultado = await api.crearReceta({
         nombre: { es: nombre, en: nombreEn || nombre },
         instrucciones: { es: instrucciones, en: instruccionesEn || instrucciones },
@@ -186,7 +249,7 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
               style={[styles.catBtn, categoriaId === cat.id && styles.catBtnActiva]}
               onPress={() => setCategoriaId(cat.id)}
             >
-              <Text style={styles.catBtnTexto}>{cat.icono} {getNombre(cat.nombre)}</Text>
+              <Text style={[styles.catBtnTexto, categoriaId === cat.id && styles.catBtnTextoActiva]}>{cat.icono} {getNombre(cat.nombre)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -326,7 +389,7 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity style={styles.btnNuevoIng} onPress={() => { setMostrarNuevoIng(true); }}>
+            <TouchableOpacity style={styles.btnNuevoIng} onPress={() => { setMostrarIngredientes(false); abrirModalNuevoIngrediente(); }}>
               <Text style={styles.btnNuevoIngTexto}>+ {t.ingredientes.nuevo}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.btnCerrarModal} onPress={() => setMostrarIngredientes(false)}>
@@ -336,35 +399,134 @@ export default function NuevaRecetaScreen({ navigation, route }: any) {
         </View>
       </Modal>
 
-      {/* Modal nuevo ingrediente */}
+      {/* Modal nuevo ingrediente - AMPLIADO */}
       <Modal visible={mostrarNuevoIng} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitulo}>{t.nueva_receta.nuevo_ingrediente}</Text>
-            <Text style={styles.label}>🇪🇸 {t.ingredientes.nombre}</Text>
-            <TextInput style={styles.input} value={nuevoIngNombre} onChangeText={setNuevoIngNombre} placeholder="Tomate" />
-            <Text style={styles.label}>🇬🇧 {t.ingredientes.nombre}</Text>
-            <TextInput style={styles.input} value={nuevoIngNombreEn} onChangeText={setNuevoIngNombreEn} placeholder="Tomato" />
-            <Text style={styles.label}>{t.ingredientes.unidad_base}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.unidadesScroll}>
-              {unidades.map((u) => (
+          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitulo}>{t.nueva_receta.nuevo_ingrediente}</Text>
+
+              {/* Nombre */}
+              <Text style={styles.label}>🇪🇸 {t.ingredientes.nombre} *</Text>
+              <TextInput style={styles.input} value={nuevoIngNombre} onChangeText={setNuevoIngNombre} placeholder="Tomate" />
+              <Text style={styles.label}>🇬🇧 {t.ingredientes.nombre} (EN)</Text>
+              <TextInput style={styles.input} value={nuevoIngNombreEn} onChangeText={setNuevoIngNombreEn} placeholder="Tomato" />
+
+              {/* Unidad base */}
+              <Text style={styles.label}>{t.ingredientes.unidad_base}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.unidadesScroll}>
+                {unidades.map((u) => (
+                  <TouchableOpacity
+                    key={u.value}
+                    style={[styles.unidadChip, nuevoIngUnidad === u.value && styles.unidadActiva]}
+                    onPress={() => setNuevoIngUnidad(u.value)}
+                  >
+                    <Text style={nuevoIngUnidad === u.value && styles.unidadActivaTexto}>{u.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Tipo de ingrediente */}
+              <Text style={styles.label}>{t.ingredientes.tipo} ({t.ingredientes.opcional})</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.unidadesScroll}>
                 <TouchableOpacity
-                  key={u.value}
-                  style={[styles.unidadChip, nuevoIngUnidad === u.value && styles.unidadActiva]}
-                  onPress={() => setNuevoIngUnidad(u.value)}
+                  style={[styles.unidadChip, !nuevoIngTipoId && styles.unidadActiva]}
+                  onPress={() => setNuevoIngTipoId('')}
                 >
-                  <Text>{u.label}</Text>
+                  <Text style={!nuevoIngTipoId && styles.unidadActivaTexto}>—</Text>
                 </TouchableOpacity>
-              ))}
+                {tiposIng.map((tipo) => (
+                  <TouchableOpacity
+                    key={tipo.id}
+                    style={[styles.unidadChip, nuevoIngTipoId === tipo.id && styles.unidadActiva]}
+                    onPress={() => setNuevoIngTipoId(tipo.id)}
+                  >
+                    <Text style={nuevoIngTipoId === tipo.id && styles.unidadActivaTexto}>{tipo.icono} {getNombre(tipo.nombre)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Botón expandir datos extra */}
+              <TouchableOpacity
+                style={styles.btnExpandir}
+                onPress={() => setMostrarDatosExtra(!mostrarDatosExtra)}
+              >
+                <Text style={styles.btnExpandirTexto}>
+                  {mostrarDatosExtra ? '▾' : '▸'} {t.ingredientes.nutricion} & {t.ingredientes.precios} ({t.ingredientes.opcional})
+                </Text>
+              </TouchableOpacity>
+
+              {/* Sección expandible: Nutrición y Precios */}
+              {mostrarDatosExtra && (
+                <View style={styles.datosExtra}>
+                  {/* Valor nutricional */}
+                  <Text style={styles.seccionTitulo}>{t.ingredientes.nutricion}</Text>
+                  <View style={styles.nutricionGrid}>
+                    <View style={styles.nutricionItem}>
+                      <Text style={styles.nutricionLabel}>🔥 {t.ingredientes.calorias}</Text>
+                      <TextInput style={styles.nutricionInput} keyboardType="numeric" value={nuevoIngCalorias} onChangeText={setNuevoIngCalorias} placeholder="0" />
+                    </View>
+                    <View style={styles.nutricionItem}>
+                      <Text style={styles.nutricionLabel}>🥩 {t.ingredientes.proteinas}</Text>
+                      <TextInput style={styles.nutricionInput} keyboardType="numeric" value={nuevoIngProteinas} onChangeText={setNuevoIngProteinas} placeholder="0" />
+                    </View>
+                    <View style={styles.nutricionItem}>
+                      <Text style={styles.nutricionLabel}>🍞 {t.ingredientes.hidratos}</Text>
+                      <TextInput style={styles.nutricionInput} keyboardType="numeric" value={nuevoIngHidratos} onChangeText={setNuevoIngHidratos} placeholder="0" />
+                    </View>
+                    <View style={styles.nutricionItem}>
+                      <Text style={styles.nutricionLabel}>🧈 {t.ingredientes.grasas}</Text>
+                      <TextInput style={styles.nutricionInput} keyboardType="numeric" value={nuevoIngGrasas} onChangeText={setNuevoIngGrasas} placeholder="0" />
+                    </View>
+                    <View style={styles.nutricionItem}>
+                      <Text style={styles.nutricionLabel}>🌿 {t.ingredientes.fibra}</Text>
+                      <TextInput style={styles.nutricionInput} keyboardType="numeric" value={nuevoIngFibra} onChangeText={setNuevoIngFibra} placeholder="0" />
+                    </View>
+                  </View>
+
+                  {/* Precios */}
+                  <Text style={styles.seccionTitulo}>{t.ingredientes.precios}</Text>
+                  {nuevoIngPrecios.map((precio, i) => (
+                    <View key={i} style={styles.precioItem}>
+                      <View style={styles.row}>
+                        <TouchableOpacity
+                          style={[styles.input, { flex: 1, marginRight: 6 }]}
+                          onPress={() => {
+                            const idx = SUPERMERCADOS.indexOf(precio.supermercado);
+                            actualizarPrecioIng(i, 'supermercado', SUPERMERCADOS[(idx + 1) % SUPERMERCADOS.length]);
+                          }}
+                        >
+                          <Text>🏪 {precio.supermercado}</Text>
+                        </TouchableOpacity>
+                        <TextInput
+                          style={[styles.input, { flex: 1, marginRight: 6 }]}
+                          placeholder={t.ingredientes.precio}
+                          keyboardType="numeric"
+                          value={precio.precio}
+                          onChangeText={(v) => actualizarPrecioIng(i, 'precio', v)}
+                        />
+                        <TouchableOpacity style={styles.btnQuitarPrecio} onPress={() => quitarPrecioIng(i)}>
+                          <Text style={styles.btnQuitarPrecioTexto}>✕</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                  <TouchableOpacity style={styles.btnAnadirPrecio} onPress={anadirPrecioIng}>
+                    <Text style={styles.btnAnadirPrecioTexto}>+ {t.ingredientes.anadir_precio}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Botones */}
+              <View style={styles.row}>
+                <TouchableOpacity style={styles.btnSec} onPress={() => { setMostrarNuevoIng(false); resetNuevoIng(); }}>
+                  <Text>{t.common.cancelar}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.btnPrim} onPress={crearIngrediente}>
+                  <Text style={styles.btnPrimTexto}>{t.common.guardar}</Text>
+                </TouchableOpacity>
+              </View>
             </ScrollView>
-            <View style={styles.row}>
-              <TouchableOpacity style={styles.btnSec} onPress={() => { setMostrarNuevoIng(false); }}>
-                <Text>{t.common.cancelar}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnPrim} onPress={crearIngrediente}>
-                <Text style={styles.btnPrimTexto}>{t.common.guardar}</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>
@@ -385,6 +547,7 @@ const styles = StyleSheet.create({
   catBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', marginRight: 8, borderWidth: 1, borderColor: '#ddd' },
   catBtnActiva: { backgroundColor: '#FF6B35', borderColor: '#FF6B35' },
   catBtnTexto: { color: '#333', fontSize: 13 },
+  catBtnTextoActiva: { color: '#fff' },
   comidaTipoRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
   comidaTipoBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', alignItems: 'center', justifyContent: 'center' },
   comidaTipoBtnActiva: { backgroundColor: '#FF6B35', borderColor: '#FF6B35' },
@@ -417,4 +580,18 @@ const styles = StyleSheet.create({
   unidadesScroll: { marginBottom: 12 },
   unidadChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: '#f0f0f0', marginRight: 6 },
   unidadActiva: { backgroundColor: '#FF6B35' },
+  unidadActivaTexto: { color: '#fff' },
+  btnExpandir: { paddingVertical: 10, paddingHorizontal: 4, marginBottom: 8 },
+  btnExpandirTexto: { fontSize: 15, fontWeight: '600', color: '#FF6B35' },
+  datosExtra: { backgroundColor: '#fafafa', borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#eee' },
+  seccionTitulo: { fontSize: 15, fontWeight: '700', color: '#555', marginBottom: 8, marginTop: 4 },
+  nutricionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  nutricionItem: { width: '48%', backgroundColor: '#fff', borderRadius: 8, padding: 8, borderWidth: 1, borderColor: '#eee' },
+  nutricionLabel: { fontSize: 12, color: '#666', marginBottom: 4 },
+  nutricionInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 6, fontSize: 15 },
+  precioItem: { marginBottom: 8 },
+  btnQuitarPrecio: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#fee', alignItems: 'center', justifyContent: 'center' },
+  btnQuitarPrecioTexto: { color: '#e74c3c', fontSize: 16 },
+  btnAnadirPrecio: { borderWidth: 1, borderColor: '#FF6B35', borderStyle: 'dashed', borderRadius: 8, padding: 10, alignItems: 'center', marginBottom: 4 },
+  btnAnadirPrecioTexto: { color: '#FF6B35', fontWeight: '600', fontSize: 14 },
 });

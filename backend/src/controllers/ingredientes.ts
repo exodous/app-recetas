@@ -162,7 +162,7 @@ export async function actualizar(req: AuthRequest, res: Response, next: NextFunc
 
     res.json(actualizado);
   } catch (err) {
-    console.error('❌ Error actualizando ingrediente:', err.message);
+    console.error('❌ Error actualizando ingrediente:', err instanceof Error ? err.message : String(err));
     next(err);
   }
 }

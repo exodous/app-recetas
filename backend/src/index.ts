@@ -14,6 +14,7 @@ import { tiposIngredienteRouter } from './routes/tiposIngrediente';
 import { descargasRouter } from './routes/descargas';
 import { menuSemanalRouter } from './routes/menuSemanal';
 import { errorHandler } from './middleware/errorHandler';
+import path from 'path';
 
 export const prisma = new PrismaClient();
 const app = express();
@@ -22,7 +23,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Rutas
+// Servir frontend web build
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDist));
+app.get('/', (_, res) => res.sendFile(path.join(frontendDist, 'index.html')));
+
+// Rutas API
 app.get('/api/health', (_, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
 app.use('/api/auth', authRouter);
 app.use('/api/recetas', recetasRouter);
